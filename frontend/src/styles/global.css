@@ -647,6 +647,7 @@ p {
   gap: 8px;
   border: 1px solid var(--admin-border);
   padding: 0 14px;
+  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -858,6 +859,7 @@ p {
   background: var(--admin-panel-2);
   color: var(--admin-text-soft);
   padding: 0 12px;
+  text-decoration: none;
 }
 
 .quick-action svg {
@@ -876,6 +878,16 @@ p {
 }
 
 .catalog-page {
+  display: grid;
+  gap: 18px;
+}
+
+.appointments-page {
+  display: grid;
+  gap: 18px;
+}
+
+.calendar-page {
   display: grid;
   gap: 18px;
 }
@@ -939,9 +951,20 @@ p {
   font-weight: 800;
 }
 
+.appointments-filter-grid label,
+.modal-field {
+  display: grid;
+  gap: 8px;
+  color: var(--admin-text-soft);
+  font-weight: 800;
+}
+
 .admin-form-grid input,
 .admin-form-grid textarea,
-.admin-form-grid select {
+.admin-form-grid select,
+.appointments-filter-grid input,
+.appointments-filter-grid select,
+.modal-field textarea {
   width: 100%;
   border: 1px solid var(--admin-border);
   border-radius: 8px;
@@ -955,18 +978,24 @@ p {
   min-height: 42px;
 }
 
-.admin-form-grid select {
+.admin-form-grid select,
+.appointments-filter-grid input,
+.appointments-filter-grid select {
   min-height: 42px;
 }
 
-.admin-form-grid textarea {
+.admin-form-grid textarea,
+.modal-field textarea {
   padding-top: 10px;
   resize: vertical;
 }
 
 .admin-form-grid input:focus,
 .admin-form-grid textarea:focus,
-.admin-form-grid select:focus {
+.admin-form-grid select:focus,
+.appointments-filter-grid input:focus,
+.appointments-filter-grid select:focus,
+.modal-field textarea:focus {
   border-color: var(--admin-brand);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
 }
@@ -995,6 +1024,288 @@ p {
 .catalog-table {
   display: grid;
   gap: 8px;
+}
+
+.appointments-filter-card,
+.appointments-list-card {
+  padding: 22px;
+}
+
+.appointments-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.appointments-filter-grid .admin-soft-button {
+  min-height: 42px;
+}
+
+.calendar-toolbar,
+.calendar-board-card {
+  padding: 22px;
+}
+
+.calendar-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.calendar-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.calendar-filters label {
+  display: grid;
+  gap: 8px;
+  color: var(--admin-text-soft);
+  font-weight: 800;
+}
+
+.calendar-filters select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  color: var(--admin-text-main);
+  padding: 0 12px;
+  outline: 0;
+}
+
+.calendar-filters select:focus {
+  border-color: var(--admin-brand);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+
+.week-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  color: var(--admin-text-soft);
+  font-weight: 850;
+}
+
+.week-switcher strong {
+  min-width: 190px;
+  text-align: center;
+}
+
+.availability-grid {
+  display: grid;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.availability-grid-head,
+.availability-grid-row {
+  display: grid;
+  grid-template-columns: 76px repeat(7, minmax(138px, 1fr));
+  gap: 8px;
+  min-width: 1060px;
+}
+
+.availability-grid-head span {
+  color: var(--admin-text-muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.availability-time {
+  display: flex;
+  align-items: center;
+  color: var(--admin-text-soft);
+  font-weight: 900;
+}
+
+.availability-cell,
+.availability-slot {
+  min-height: 58px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  color: var(--admin-text-main);
+  padding: 10px;
+  text-align: left;
+}
+
+.availability-cell {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+}
+
+.availability-cell strong,
+.availability-slot strong {
+  font-size: 0.88rem;
+}
+
+.availability-cell span,
+.availability-slot span,
+.availability-slot small {
+  color: var(--admin-text-muted);
+  font-weight: 750;
+}
+
+.availability-cell.is-free,
+.availability-slot.is-free {
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, 0.14), transparent 70%),
+    var(--admin-panel-2);
+}
+
+.availability-cell.is-free strong,
+.availability-slot.is-free strong {
+  color: var(--admin-success);
+}
+
+.availability-cell.is-booked,
+.availability-slot.is-booked {
+  background:
+    linear-gradient(135deg, rgba(167, 139, 250, 0.16), transparent 70%),
+    var(--admin-panel-2);
+}
+
+.availability-cell.is-empty {
+  min-height: 58px;
+  background: color-mix(in srgb, var(--admin-panel-2) 55%, transparent);
+}
+
+.availability-mobile-list {
+  display: none;
+}
+
+.availability-mobile-day {
+  display: grid;
+  gap: 10px;
+}
+
+.availability-mobile-day h4 {
+  margin: 0;
+  color: var(--admin-text-soft);
+  text-transform: capitalize;
+}
+
+.availability-mobile-slots {
+  display: grid;
+  gap: 8px;
+}
+
+.availability-slot {
+  display: grid;
+  gap: 3px;
+}
+
+.appointments-pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--admin-text-muted);
+  font-weight: 800;
+}
+
+.appointments-day-list {
+  display: grid;
+  gap: 18px;
+}
+
+.appointments-day-group {
+  display: grid;
+  gap: 10px;
+}
+
+.appointments-day-group h4 {
+  margin: 0;
+  color: var(--admin-text-soft);
+  font-size: 0.92rem;
+  text-transform: capitalize;
+}
+
+.appointments-admin-list {
+  display: grid;
+  gap: 10px;
+}
+
+.appointment-admin-row {
+  display: grid;
+  grid-template-columns: 92px minmax(170px, 1.1fr) minmax(170px, 1fr) 140px minmax(180px, auto);
+  align-items: center;
+  gap: 14px;
+  min-height: 78px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  padding: 12px 14px;
+}
+
+.appointment-admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.appointment-admin-actions .icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.appointment-secondary span {
+  color: var(--admin-text-muted);
+}
+
+.appointment-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--admin-text-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 7, 12, 0.72);
+  padding: 22px;
+}
+
+.admin-modal {
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 44px));
+  overflow: auto;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.35);
+  padding: 22px;
+}
+
+.transition-summary {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  padding: 14px;
+}
+
+.transition-summary span,
+.transition-summary time {
+  color: var(--admin-text-muted);
 }
 
 .catalog-table-head,
@@ -1129,6 +1440,33 @@ p {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .appointments-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .calendar-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .week-switcher {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .appointment-admin-row {
+    grid-template-columns: 82px minmax(160px, 1fr) minmax(150px, 1fr) 130px;
+  }
+
+  .appointment-admin-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
   .catalog-table-head,
   .catalog-row,
   .professionals-table .catalog-table-head,
@@ -1261,6 +1599,35 @@ p {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .appointments-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .availability-grid {
+    display: none;
+  }
+
+  .availability-mobile-list {
+    display: grid;
+    gap: 18px;
+  }
+
+  .appointment-admin-row {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+
+  .appointment-admin-row .appointment-time,
+  .appointment-admin-row .appointment-main,
+  .appointment-admin-row .appointment-secondary,
+  .appointment-admin-actions {
+    grid-column: 1 / -1;
+  }
+
+  .appointment-admin-row .status-badge {
+    justify-self: start;
+  }
+
   .catalog-table-head {
     display: none;
   }
@@ -1356,8 +1723,25 @@ p {
   }
 
   .catalog-summary-grid,
-  .admin-form-grid {
+  .admin-form-grid,
+  .appointments-filter-grid,
+  .calendar-filters {
     grid-template-columns: 1fr;
+  }
+
+  .week-switcher {
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    width: 100%;
+  }
+
+  .week-switcher strong {
+    min-width: 0;
+  }
+
+  .week-switcher .admin-soft-button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .form-span-2 {
@@ -1365,8 +1749,28 @@ p {
   }
 
   .catalog-form-card,
-  .catalog-list-card {
+  .catalog-list-card,
+  .appointments-filter-card,
+  .appointments-list-card,
+  .calendar-toolbar,
+  .calendar-board-card,
+  .admin-modal {
     padding: 16px;
+  }
+
+  .admin-modal-backdrop {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .admin-modal {
+    max-height: calc(100vh - 20px);
+    width: 100%;
+  }
+
+  .appointments-pagination {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .form-actions {

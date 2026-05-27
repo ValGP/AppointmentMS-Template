@@ -536,6 +536,87 @@ Salida esperada:
 
 - El admin puede operar el ciclo completo de turnos.
 
+### Fase 4.1 - Cierre operativo del admin antes del cliente
+
+Objetivo:
+
+Cerrar huecos funcionales y de UX del panel administrativo antes de pasar al flujo cliente. Esta fase existe para que el admin quede como herramienta coherente, no como una suma de pantallas sueltas.
+
+Tareas:
+
+- Renombrar o aclarar el boton "Ventana inicial" de turnos. Su funcion actual es restablecer filtros a semana actual y semana siguiente; el texto deberia comunicarlo mejor, por ejemplo "Restablecer 14 dias" o "Semana actual + proxima".
+- Definir el rol de la pestaña `/admin/calendar` o "Agenda". Para el MVP deberia convertirse en una vista de disponibilidad, no en un calendario complejo.
+- Implementar en Agenda una consulta de disponibilidad por profesional, servicio y fecha usando `GET /api/availability`.
+- Mostrar slots disponibles de forma clara para el admin, con estados vacios y errores entendibles.
+- Permitir que desde la vista de disponibilidad se pueda iniciar la creacion de un turno manual usando el slot seleccionado.
+- Mantener para el MVP la regla actual del backend: el admin no fuerza turnos fuera de disponibilidad. La creacion manual debe respetar horarios laborales, bloqueos, turnos existentes, profesional activo, servicio activo y cliente activo. La opcion de "forzar turno" queda como posible mejora futura de backend, idealmente con motivo obligatorio.
+- Disenar la vista Agenda/Disponibilidad con una vista semanal:
+  - En desktop, mostrar una grilla por semana con columnas por dia (`Lunes`, `Martes`, `Miercoles`, etc.) y filas por horarios (`09:00`, `09:30`, etc.).
+  - En cada celda o bloque horario, diferenciar horarios disponibles, turnos ocupados y espacios sin disponibilidad.
+  - Si hay un turno ocupado, mostrar una referencia breve del turno, por ejemplo cliente/servicio o un texto tipo "Turno demo".
+  - Si el slot esta disponible, permitir seleccionarlo para abrir la creacion de turno con profesional, servicio, fecha y hora precargados.
+  - En mobile, reemplazar la grilla por un listado por dias: `Lunes`, luego sus horarios/turnos; `Martes`, luego sus horarios/turnos; y asi sucesivamente, evitando overflow horizontal pesado.
+  - Agregar un cambiador de semana arriba de la vista con flecha para semana anterior, flecha para semana siguiente y texto de rango, por ejemplo `Semana del 25/05 al 31/05`.
+  - La vista debe iniciar siempre mostrando la semana actual.
+  - Si el admin navega a otra semana, evaluar un boton para volver rapido a la semana actual.
+  - La vista debe usar filtros de profesional y servicio, porque la disponibilidad depende de ambos.
+- Conectar las acciones rapidas del dashboard:
+  - "Crear turno manual" debe abrir o navegar al flujo real de nuevo turno.
+  - "Registrar cliente" debe llevar a clientes y abrir/indicar alta de cliente.
+  - "Revisar disponibilidad" debe llevar a la vista Agenda/disponibilidad.
+- Revisar si la busqueda global del header queda como placeholder o si debe ocultarse hasta tener una busqueda real.
+- Revisar labels y microcopy de filtros y acciones para que no sean ambiguos.
+- Revisar que no queden placeholders visibles en rutas admin principales.
+- Revisar responsive mobile/tablet de Turnos y Agenda.
+- Verificar que servicios, profesionales, clientes, horarios, bloqueos, turnos y disponibilidad cubran el flujo administrativo completo antes de avanzar a cliente.
+
+Salida esperada:
+
+- El admin puede cargar datos base, revisar disponibilidad, crear turnos y operar estados sin depender de pantallas placeholder.
+- El flujo administrativo queda suficientemente cerrado como base para construir despues la reserva del cliente reutilizando disponibilidad y reglas ya probadas.
+
+### Preview Fase 4.2 - Relacion profesional-servicio e interfaces de asignacion
+
+Objetivo:
+
+Adaptar el frontend admin cuando el backend incorpore la relacion entre profesionales y servicios. Esta fase depende primero de cambios en backend.
+
+Contexto:
+
+Durante la implementacion de Agenda/Disponibilidad se detecto que actualmente no existe una relacion explicita entre profesional y servicio. El sistema asume, en la practica, que cualquier profesional activo puede atender cualquier servicio activo. Para un negocio simple esto reduce carga operativa, pero para el flujo cliente y para la agenda real puede generar combinaciones poco validas.
+
+Decision de producto sugerida:
+
+Usar un modelo hibrido:
+
+- Por defecto, un profesional puede atender todos los servicios.
+- Opcionalmente, el admin puede limitar un profesional a servicios especificos.
+- Al crear un servicio nuevo, se debe poder definir si queda disponible para todos los profesionales o solo para profesionales seleccionados.
+
+Tareas frontend previstas:
+
+- En creacion/edicion de profesionales, agregar una interfaz de decision:
+  - `Atiende todos los servicios`.
+  - `Atiende servicios especificos`.
+  - Si elige servicios especificos, mostrar selector/checklist de servicios.
+- En creacion/edicion de servicios, agregar una interfaz equivalente:
+  - `Asignar a todos los profesionales`.
+  - `Asignar solo a profesionales seleccionados`.
+- Ajustar Agenda/Disponibilidad para que los selects se filtren segun la relacion:
+  - Si se elige servicio, mostrar profesionales compatibles.
+  - Si se elige profesional, mostrar servicios compatibles.
+- Ajustar creacion manual de turnos para impedir combinaciones profesional-servicio no habilitadas antes de enviar al backend.
+- Ajustar futuro flujo cliente para usar primero servicios y luego profesionales/slots compatibles.
+- Agregar estados vacios claros cuando no haya profesionales compatibles con un servicio o servicios compatibles con un profesional.
+
+Dependencias backend:
+
+- Endpoint o campo para saber si un profesional atiende todos los servicios o solo algunos.
+- Endpoints para consultar/asignar servicios de un profesional.
+- Endpoints o payloads para asignar profesionales al crear/editar un servicio.
+- Validacion backend para rechazar turnos con combinaciones profesional-servicio no habilitadas.
+- Disponibilidad debe respetar la relacion profesional-servicio.
+
 ### Fase 5 - Flujo cliente para solicitar turno
 
 Objetivo:
@@ -734,9 +815,10 @@ TailAdmin puede acelerar el inicio, pero si se copia sin criterio puede imponer 
 9. Implementar gestion de clientes admin.
 10. Implementar horarios y bloqueos.
 11. Implementar turnos admin como listado/agenda.
-12. Implementar flujo cliente autenticado.
-13. Pulir sitio publico.
-14. Pausar antes de la fase visual fina para definir estetica.
+12. Cerrar Fase 4.1 con disponibilidad admin, acciones rapidas y placeholders administrativos resueltos.
+13. Implementar flujo cliente autenticado.
+14. Pulir sitio publico.
+15. Pausar antes de la fase visual fina para definir estetica.
 
 ## 13. Preguntas para la siguiente conversacion
 

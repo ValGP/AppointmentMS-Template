@@ -34,11 +34,26 @@ export type Appointment = {
 };
 
 export type AppointmentSearchParams = {
+  clientId?: number;
+  professionalId?: number;
+  status?: AppointmentStatus;
   from?: string;
   to?: string;
   page?: number;
   size?: number;
   sort?: string;
+};
+
+export type AppointmentPayload = {
+  clientId?: number;
+  professionalId: number;
+  serviceId: number;
+  startDateTime: string;
+  notes?: string;
+};
+
+export type AppointmentTransitionPayload = {
+  reason?: string;
 };
 
 export function getAppointments(params: AppointmentSearchParams = {}) {
@@ -54,4 +69,49 @@ export function getAppointments(params: AppointmentSearchParams = {}) {
   return apiRequest<PageResponse<Appointment>>(
     `/api/appointments${query ? `?${query}` : ""}`,
   );
+}
+
+export function createAppointment(payload: AppointmentPayload) {
+  return apiRequest<Appointment>("/api/appointments", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function confirmAppointment(id: number) {
+  return apiRequest<Appointment>(`/api/appointments/${id}/confirm`, {
+    method: "PATCH",
+  });
+}
+
+export function rejectAppointment(
+  id: number,
+  payload: AppointmentTransitionPayload,
+) {
+  return apiRequest<Appointment>(`/api/appointments/${id}/reject`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function cancelAppointmentByAdmin(
+  id: number,
+  payload: AppointmentTransitionPayload,
+) {
+  return apiRequest<Appointment>(`/api/appointments/${id}/cancel-by-admin`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export function completeAppointment(id: number) {
+  return apiRequest<Appointment>(`/api/appointments/${id}/complete`, {
+    method: "PATCH",
+  });
+}
+
+export function markAppointmentNoShow(id: number) {
+  return apiRequest<Appointment>(`/api/appointments/${id}/no-show`, {
+    method: "PATCH",
+  });
 }

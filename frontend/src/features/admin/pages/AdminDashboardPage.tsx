@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import {
   AlertCircle,
   CalendarClock,
@@ -100,10 +101,10 @@ export function AdminDashboardPage() {
             <RefreshCw aria-hidden="true" size={16} />
             Actualizar
           </button>
-          <button className="admin-primary-button" type="button">
+          <Link className="admin-primary-button" to="/admin/appointments">
             <Plus aria-hidden="true" size={16} />
             Nuevo turno
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -203,18 +204,18 @@ export function AdminDashboardPage() {
                 <h3>Rapidas</h3>
               </div>
             </div>
-            <button className="quick-action" type="button">
+            <Link className="quick-action" to="/admin/appointments">
               <Plus aria-hidden="true" size={16} />
               Crear turno manual
-            </button>
-            <button className="quick-action" type="button">
+            </Link>
+            <Link className="quick-action" to="/admin/clients">
               <UserPlus aria-hidden="true" size={16} />
               Registrar cliente
-            </button>
-            <button className="quick-action" type="button">
+            </Link>
+            <Link className="quick-action" to="/admin/calendar">
               <CalendarClock aria-hidden="true" size={16} />
               Revisar disponibilidad
-            </button>
+            </Link>
           </article>
         </aside>
       </div>

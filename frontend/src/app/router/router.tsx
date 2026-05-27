@@ -5,12 +5,13 @@ import { PublicLayout } from "../layouts/PublicLayout";
 import { AuthGate } from "../../features/auth/components/AuthGate";
 import { PublicOnlyRoute } from "../../features/auth/components/PublicOnlyRoute";
 import { AdminDashboardPage } from "../../features/admin/pages/AdminDashboardPage";
+import { AdminAppointmentsPage } from "../../features/admin/pages/AdminAppointmentsPage";
 import { AdminAvailabilityBlocksPage } from "../../features/admin/pages/AdminAvailabilityBlocksPage";
 import { AdminBusinessHoursPage } from "../../features/admin/pages/AdminBusinessHoursPage";
+import { AdminCalendarPage } from "../../features/admin/pages/AdminCalendarPage";
 import { AdminClientsPage } from "../../features/admin/pages/AdminClientsPage";
 import { AdminProfessionalsPage } from "../../features/admin/pages/AdminProfessionalsPage";
 import { AdminServicesPage } from "../../features/admin/pages/AdminServicesPage";
-import { AdminPlaceholderPage } from "../../features/admin/pages/AdminPlaceholderPage";
 import { ClientAppointmentsPage } from "../../features/client/pages/ClientAppointmentsPage";
 import { ClientBookPage } from "../../features/client/pages/ClientBookPage";
 import { ClientProfilePage } from "../../features/client/pages/ClientProfilePage";
@@ -59,9 +60,9 @@ export const router = createBrowserRouter([
           { path: "dashboard", element: <AdminDashboardPage /> },
           {
             path: "appointments",
-            element: <AdminPlaceholderPage title="Turnos" />,
+            element: <AdminAppointmentsPage />,
           },
-          { path: "calendar", element: <AdminPlaceholderPage title="Agenda" /> },
+          { path: "calendar", element: <AdminCalendarPage /> },
           {
             path: "services",
             element: <AdminServicesPage />,

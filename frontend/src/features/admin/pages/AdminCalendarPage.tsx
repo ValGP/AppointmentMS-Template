@@ -1,0 +1,580 @@
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Plus,
+  RotateCcw,
+  X,
+} from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useForm } from "react-hook-form";
+import { ApiError } from "../../../shared/api/httpClient";
+import {
+  addDays,
+  endOfDay,
+  formatShortDateTime,
+  formatTime,
+  startOfWeek,
+  toLocalDateTimeParam,
+} from "../../../shared/utils/date";
+import { getAppointments, createAppointment, type Appointment, type AppointmentPayload } from "../../appointments/api/appointmentsApi";
+import { getAvailability, type AvailabilitySlot } from "../../availability/api/availabilityApi";
+import { getClients } from "../../clients/api/clientsApi";
+import { getProfessionals } from "../../professionals/api/professionalsApi";
+import { getServices } from "../../services/api/servicesApi";
+
+type AppointmentFormValues = {
+  clientId: number;
+  notes: string;
+};
+
+type SelectedSlot = {
+  startDateTime: string;
+  endDateTime: string;
+};
+
+type DayModel = {
+  date: Date;
+  dateKey: string;
+  label: string;
+};
+
+const currentWeekStart = startOfWeek(new Date());
+
+function toDateKey(date: Date) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toTimeKey(value: string) {
+  return value.slice(11, 16);
+}
+
+function getWeekDays(weekStart: Date): DayModel[] {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(weekStart, index);
+    return {
+      date,
+      dateKey: toDateKey(date),
+      label: new Intl.DateTimeFormat("es-AR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+      }).format(date),
+    };
+  });
+}
+
+function formatWeekRange(weekStart: Date) {
+  const weekEnd = addDays(weekStart, 6);
+  const formatter = new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+  return `Semana del ${formatter.format(weekStart)} al ${formatter.format(weekEnd)}`;
+}
+
+function isActiveAppointment(appointment: Appointment) {
+  return appointment.status === "PENDING" || appointment.status === "CONFIRMED";
+}
+
+export function AdminCalendarPage() {
+  const queryClient = useQueryClient();
+  const [weekStart, setWeekStart] = useState(currentWeekStart);
+  const [professionalId, setProfessionalId] = useState<number>(0);
+  const [serviceId, setServiceId] = useState<number>(0);
+  const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const professionalsQuery = useQuery({
+    queryKey: ["professionals"],
+    queryFn: getProfessionals,
+  });
+  const servicesQuery = useQuery({ queryKey: ["services"], queryFn: getServices });
+  const clientsQuery = useQuery({ queryKey: ["clients"], queryFn: getClients });
+
+  const professionals = professionalsQuery.data ?? [];
+  const services = servicesQuery.data ?? [];
+  const clients = clientsQuery.data ?? [];
+  const activeProfessionals = professionals.filter((professional) => professional.active);
+  const activeServices = services.filter((service) => service.active);
+  const activeClients = clients.filter((client) => client.active);
+  const selectedProfessionalId = professionalId || activeProfessionals[0]?.id || 0;
+  const selectedServiceId = serviceId || activeServices[0]?.id || 0;
+  const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
+
+  const appointmentsQuery = useQuery({
+    queryKey: ["calendar-appointments", selectedProfessionalId, weekStart],
+    enabled: selectedProfessionalId > 0,
+    queryFn: () =>
+      getAppointments({
+        professionalId: selectedProfessionalId,
+        from: toLocalDateTimeParam(weekStart),
+        to: toLocalDateTimeParam(endOfDay(addDays(weekStart, 6))),
+        page: 0,
+        size: 200,
+        sort: "startDateTime,asc",
+      }),
+  });
+
+  const availabilityQueries = useQueries({
+    queries: weekDays.map((day) => ({
+      queryKey: [
+        "availability",
+        selectedProfessionalId,
+        selectedServiceId,
+        day.dateKey,
+      ],
+      enabled: selectedProfessionalId > 0 && selectedServiceId > 0,
+      queryFn: () =>
+        getAvailability({
+          professionalId: selectedProfessionalId,
+          serviceId: selectedServiceId,
+          date: day.dateKey,
+        }),
+    })),
+  });
+
+  const appointments = appointmentsQuery.data?.content ?? [];
+  const activeAppointments = appointments.filter(isActiveAppointment);
+  const availabilityByDay = weekDays.reduce<Record<string, AvailabilitySlot[]>>(
+    (acc, day, index) => {
+      acc[day.dateKey] = availabilityQueries[index]?.data ?? [];
+      return acc;
+    },
+    {},
+  );
+  const appointmentsByDay = activeAppointments.reduce<Record<string, Appointment[]>>(
+    (acc, appointment) => {
+      const key = appointment.startDateTime.slice(0, 10);
+      acc[key] = acc[key] ?? [];
+      acc[key].push(appointment);
+      return acc;
+    },
+    {},
+  );
+  const timeRows = useMemo(() => {
+    const times = new Set<string>();
+
+    weekDays.forEach((day) => {
+      availabilityByDay[day.dateKey]?.forEach((slot) =>
+        times.add(toTimeKey(slot.startDateTime)),
+      );
+      appointmentsByDay[day.dateKey]?.forEach((appointment) =>
+        times.add(toTimeKey(appointment.startDateTime)),
+      );
+    });
+
+    return Array.from(times).sort();
+  }, [availabilityByDay, appointmentsByDay, weekDays]);
+
+  const createForm = useForm<AppointmentFormValues>({
+    defaultValues: {
+      clientId: 0,
+      notes: "",
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (payload: AppointmentPayload) => createAppointment(payload),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-dashboard-appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["availability"] }),
+      ]);
+      closeSlotModal();
+    },
+    onError: (error) =>
+      setFormError(
+        error instanceof ApiError ? error.message : "No se pudo crear el turno.",
+      ),
+  });
+
+  function moveWeek(offset: number) {
+    setWeekStart((current) => addDays(current, offset * 7));
+  }
+
+  function resetWeek() {
+    setWeekStart(currentWeekStart);
+  }
+
+  function openSlotModal(slot: AvailabilitySlot) {
+    setSelectedSlot(slot);
+    setFormError(null);
+    createForm.reset({
+      clientId: activeClients[0]?.id ?? 0,
+      notes: "",
+    });
+  }
+
+  function closeSlotModal() {
+    setSelectedSlot(null);
+    setFormError(null);
+    createForm.reset();
+  }
+
+  function createFromSlot(values: AppointmentFormValues) {
+    if (!selectedSlot) {
+      return;
+    }
+
+    setFormError(null);
+    createMutation.mutate({
+      clientId: Number(values.clientId),
+      professionalId: selectedProfessionalId,
+      serviceId: selectedServiceId,
+      startDateTime: selectedSlot.startDateTime,
+      notes: values.notes.trim() || undefined,
+    });
+  }
+
+  const isLoading =
+    appointmentsQuery.isLoading ||
+    availabilityQueries.some((query) => query.isLoading);
+  const hasError =
+    appointmentsQuery.isError || availabilityQueries.some((query) => query.isError);
+
+  return (
+    <section className="calendar-page">
+      <div className="catalog-header">
+        <div>
+          <p className="admin-kicker">Disponibilidad</p>
+          <h2>Agenda</h2>
+          <p>
+            Revisa horarios disponibles por semana y crea turnos desde un slot
+            valido.
+          </p>
+        </div>
+      </div>
+
+      <article className="admin-card calendar-toolbar">
+        <div className="calendar-filters">
+          <label>
+            Profesional
+            <select
+              value={selectedProfessionalId}
+              onChange={(event) => setProfessionalId(Number(event.target.value))}
+            >
+              {activeProfessionals.length === 0 ? (
+                <option value={0}>Sin profesionales activos</option>
+              ) : null}
+              {activeProfessionals.map((professional) => (
+                <option key={professional.id} value={professional.id}>
+                  {professional.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Servicio
+            <select
+              value={selectedServiceId}
+              onChange={(event) => setServiceId(Number(event.target.value))}
+            >
+              {activeServices.length === 0 ? (
+                <option value={0}>Sin servicios activos</option>
+              ) : null}
+              {activeServices.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="week-switcher" aria-label="Cambiar semana">
+          <button
+            className="icon-button"
+            type="button"
+            onClick={() => moveWeek(-1)}
+            aria-label="Semana anterior"
+          >
+            <ChevronLeft aria-hidden="true" size={18} />
+          </button>
+          <strong>{formatWeekRange(weekStart)}</strong>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={() => moveWeek(1)}
+            aria-label="Semana siguiente"
+          >
+            <ChevronRight aria-hidden="true" size={18} />
+          </button>
+          <button className="admin-soft-button" type="button" onClick={resetWeek}>
+            <RotateCcw aria-hidden="true" size={16} />
+            Semana actual
+          </button>
+        </div>
+      </article>
+
+      <article className="admin-card calendar-board-card">
+        <div className="card-heading">
+          <div>
+            <p className="admin-kicker">Semana</p>
+            <h3>Disponibilidad y turnos ocupados</h3>
+          </div>
+          <span className="window-pill">{timeRows.length} horarios</span>
+        </div>
+
+        {selectedProfessionalId === 0 || selectedServiceId === 0 ? (
+          <CalendarState label="Carga al menos un profesional activo y un servicio activo." />
+        ) : null}
+        {isLoading ? <CalendarState label="Calculando disponibilidad..." /> : null}
+        {hasError ? (
+          <CalendarState label="No se pudo cargar la disponibilidad." />
+        ) : null}
+        {!isLoading &&
+        !hasError &&
+        selectedProfessionalId > 0 &&
+        selectedServiceId > 0 &&
+        timeRows.length === 0 ? (
+          <CalendarState label="No hay disponibilidad ni turnos ocupados en esta semana." />
+        ) : null}
+
+        {!isLoading && !hasError && timeRows.length > 0 ? (
+          <>
+            <div className="availability-grid" role="table" aria-label="Disponibilidad semanal">
+              <div className="availability-grid-head" role="row">
+                <span>Hora</span>
+                {weekDays.map((day) => (
+                  <span key={day.dateKey}>{day.label}</span>
+                ))}
+              </div>
+              {timeRows.map((time) => (
+                <div className="availability-grid-row" role="row" key={time}>
+                  <span className="availability-time">{time}</span>
+                  {weekDays.map((day) => (
+                    <AvailabilityCell
+                      appointments={appointmentsByDay[day.dateKey] ?? []}
+                      dayKey={day.dateKey}
+                      key={day.dateKey}
+                      onSelectSlot={openSlotModal}
+                      slots={availabilityByDay[day.dateKey] ?? []}
+                      time={time}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div className="availability-mobile-list">
+              {weekDays.map((day) => (
+                <section className="availability-mobile-day" key={day.dateKey}>
+                  <h4>{day.label}</h4>
+                  {getDayItems(
+                    availabilityByDay[day.dateKey] ?? [],
+                    appointmentsByDay[day.dateKey] ?? [],
+                  ).length === 0 ? (
+                    <p className="muted-copy">Sin horarios para este dia.</p>
+                  ) : (
+                    <div className="availability-mobile-slots">
+                      {getDayItems(
+                        availabilityByDay[day.dateKey] ?? [],
+                        appointmentsByDay[day.dateKey] ?? [],
+                      ).map((item) =>
+                        item.type === "appointment" ? (
+                          <div className="availability-slot is-booked" key={item.key}>
+                            <strong>{toTimeKey(item.appointment.startDateTime)}</strong>
+                            <span>{item.appointment.clientName}</span>
+                            <small>{item.appointment.serviceName}</small>
+                          </div>
+                        ) : (
+                          <button
+                            className="availability-slot is-free"
+                            type="button"
+                            key={item.key}
+                            onClick={() => openSlotModal(item.slot)}
+                          >
+                            <strong>{toTimeKey(item.slot.startDateTime)}</strong>
+                            <span>Disponible</span>
+                            <small>Crear turno</small>
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </article>
+
+      {selectedSlot ? (
+        <Modal title="Crear turno" kicker="Slot disponible" onClose={closeSlotModal}>
+          <div className="transition-summary">
+            <strong>{formatShortDateTime(selectedSlot.startDateTime)}</strong>
+            <span>{formatTime(selectedSlot.startDateTime)} - {formatTime(selectedSlot.endDateTime)}</span>
+          </div>
+          <form className="admin-form-grid" onSubmit={createForm.handleSubmit(createFromSlot)}>
+            <label className="form-span-2">
+              Cliente
+              <select
+                {...createForm.register("clientId", {
+                  required: "Selecciona un cliente.",
+                  valueAsNumber: true,
+                  min: { value: 1, message: "Selecciona un cliente." },
+                })}
+              >
+                <option value={0}>Seleccionar</option>
+                {activeClients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.fullName}
+                  </option>
+                ))}
+              </select>
+              <FieldError message={createForm.formState.errors.clientId?.message} />
+            </label>
+            <label className="form-span-2">
+              Notas
+              <textarea
+                rows={3}
+                {...createForm.register("notes", {
+                  maxLength: {
+                    value: 500,
+                    message: "Maximo 500 caracteres.",
+                  },
+                })}
+              />
+              <FieldError message={createForm.formState.errors.notes?.message} />
+            </label>
+            {formError ? <div className="admin-form-error">{formError}</div> : null}
+            <div className="form-actions">
+              <button className="admin-soft-button" type="button" onClick={closeSlotModal}>
+                Cancelar
+              </button>
+              <button
+                className="admin-primary-button"
+                type="submit"
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? "Creando..." : "Crear turno"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
+    </section>
+  );
+}
+
+function AvailabilityCell({
+  appointments,
+  dayKey,
+  onSelectSlot,
+  slots,
+  time,
+}: {
+  appointments: Appointment[];
+  dayKey: string;
+  onSelectSlot: (slot: AvailabilitySlot) => void;
+  slots: AvailabilitySlot[];
+  time: string;
+}) {
+  const appointment = appointments.find(
+    (item) => toTimeKey(item.startDateTime) === time,
+  );
+  const slot = slots.find((item) => toTimeKey(item.startDateTime) === time);
+
+  if (appointment) {
+    return (
+      <div className="availability-cell is-booked">
+        <strong>{appointment.clientName}</strong>
+        <span>{appointment.serviceName}</span>
+      </div>
+    );
+  }
+
+  if (slot) {
+    return (
+      <button
+        className="availability-cell is-free"
+        type="button"
+        onClick={() => onSelectSlot(slot)}
+        aria-label={`Crear turno ${dayKey} ${time}`}
+      >
+        <strong>Disponible</strong>
+        <span>Crear turno</span>
+      </button>
+    );
+  }
+
+  return <div className="availability-cell is-empty" aria-label="Sin disponibilidad" />;
+}
+
+type DayItem =
+  | { key: string; type: "slot"; slot: AvailabilitySlot }
+  | { appointment: Appointment; key: string; type: "appointment" };
+
+function getDayItems(slots: AvailabilitySlot[], appointments: Appointment[]) {
+  const items: DayItem[] = [
+    ...slots.map((slot) => ({
+      key: `slot-${slot.startDateTime}`,
+      slot,
+      type: "slot" as const,
+    })),
+    ...appointments.map((appointment) => ({
+      appointment,
+      key: `appointment-${appointment.id}`,
+      type: "appointment" as const,
+    })),
+  ];
+
+  return items.sort((a, b) => {
+    const aDate = a.type === "slot" ? a.slot.startDateTime : a.appointment.startDateTime;
+    const bDate = b.type === "slot" ? b.slot.startDateTime : b.appointment.startDateTime;
+    return new Date(aDate).getTime() - new Date(bDate).getTime();
+  });
+}
+
+function Modal({
+  children,
+  kicker,
+  onClose,
+  title,
+}: {
+  children: ReactNode;
+  kicker: string;
+  onClose: () => void;
+  title: string;
+}) {
+  return (
+    <div className="admin-modal-backdrop" role="presentation">
+      <section className="admin-modal" role="dialog" aria-modal="true">
+        <div className="card-heading">
+          <div>
+            <p className="admin-kicker">{kicker}</p>
+            <h3>{title}</h3>
+          </div>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar modal"
+          >
+            <X aria-hidden="true" size={18} />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function CalendarState({ label }: { label: string }) {
+  return (
+    <div className="dashboard-state">
+      <CalendarClock aria-hidden="true" size={20} />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <span className="field-error">{message}</span> : null;
+}
