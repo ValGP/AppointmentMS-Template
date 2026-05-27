@@ -1,0 +1,77 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------< com.turnos:appointment-management-api >----------------
+[INFO] Building appointment-management-api 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.3.5:run (default-cli) > test-compile @ appointment-management-api >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ appointment-management-api ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ appointment-management-api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ appointment-management-api ---
+[INFO] skip non existing resourceDirectory C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ appointment-management-api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.3.5:run (default-cli) < test-compile @ appointment-management-api <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.3.5:run (default-cli) @ appointment-management-api ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.5)
+
+2026-05-27T11:47:47.026-03:00  INFO 30828 --- [appointment-management-api] [           main] .t.a.AppointmentManagementApiApplication : Starting AppointmentManagementApiApplication using Java 21.0.10 with PID 30828 (C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\target\classes started by vale- in C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API)
+2026-05-27T11:47:47.028-03:00  INFO 30828 --- [appointment-management-api] [           main] .t.a.AppointmentManagementApiApplication : The following 1 profile is active: "dev"
+2026-05-27T11:47:47.636-03:00  INFO 30828 --- [appointment-management-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-27T11:47:47.694-03:00  INFO 30828 --- [appointment-management-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 52 ms. Found 6 JPA repository interfaces.
+2026-05-27T11:47:48.123-03:00  INFO 30828 --- [appointment-management-api] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-27T11:47:48.132-03:00  INFO 30828 --- [appointment-management-api] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-27T11:47:48.133-03:00  INFO 30828 --- [appointment-management-api] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.31]
+2026-05-27T11:47:48.184-03:00  INFO 30828 --- [appointment-management-api] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-27T11:47:48.185-03:00  INFO 30828 --- [appointment-management-api] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1124 ms
+2026-05-27T11:47:48.370-03:00  INFO 30828 --- [appointment-management-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-27T11:47:48.510-03:00  INFO 30828 --- [appointment-management-api] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@24e5389c
+2026-05-27T11:47:48.510-03:00  INFO 30828 --- [appointment-management-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-27T11:47:48.537-03:00  INFO 30828 --- [appointment-management-api] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/appointment_management (PostgreSQL 18.4)
+2026-05-27T11:47:48.542-03:00  WARN 30828 --- [appointment-management-api] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: PostgreSQL 18.4 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 16.
+2026-05-27T11:47:48.580-03:00  INFO 30828 --- [appointment-management-api] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.025s)
+2026-05-27T11:47:48.625-03:00  INFO 30828 --- [appointment-management-api] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 2
+2026-05-27T11:47:48.625-03:00  INFO 30828 --- [appointment-management-api] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-05-27T11:47:48.691-03:00  INFO 30828 --- [appointment-management-api] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-27T11:47:48.736-03:00  INFO 30828 --- [appointment-management-api] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-05-27T11:47:48.765-03:00  INFO 30828 --- [appointment-management-api] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-27T11:47:49.017-03:00  INFO 30828 --- [appointment-management-api] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-27T11:47:49.063-03:00  WARN 30828 --- [appointment-management-api] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-27T11:47:49.853-03:00  INFO 30828 --- [appointment-management-api] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-27T11:47:49.886-03:00  INFO 30828 --- [appointment-management-api] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-27T11:47:50.475-03:00  INFO 30828 --- [appointment-management-api] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-05-27T11:47:50.476-03:00  WARN 30828 --- [appointment-management-api] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used for username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider.
+2026-05-27T11:47:51.006-03:00  INFO 30828 --- [appointment-management-api] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-05-27T11:47:51.013-03:00  INFO 30828 --- [appointment-management-api] [           main] .t.a.AppointmentManagementApiApplication : Started AppointmentManagementApiApplication in 4.299 seconds (process running for 4.594)
+Hibernate: 
+    select
+        u1_0.id 
+    from
+        app_users u1_0 
+    where
+        u1_0.email=? 
+    fetch
+        first ? rows only
+2026-05-27T11:47:52.959-03:00  INFO 30828 --- [appointment-management-api] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-27T11:47:52.959-03:00  INFO 30828 --- [appointment-management-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-27T11:47:52.965-03:00  INFO 30828 --- [appointment-management-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 6 ms

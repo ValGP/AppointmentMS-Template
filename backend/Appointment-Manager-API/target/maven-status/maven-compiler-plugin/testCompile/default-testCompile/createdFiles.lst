@@ -1,0 +1,16 @@
+com\turnos\api\catalogs\AdminCatalogControllerTest.class
+com\turnos\api\availability\BusinessHoursTest.class
+com\turnos\api\appointments\AppointmentHistoryControllerTest.class
+com\turnos\api\users\ClientControllerTest.class
+com\turnos\api\availability\AvailabilityBlockTest.class
+com\turnos\api\availability\AvailabilityControllerTest$Fixture.class
+com\turnos\api\AppointmentManagementApiApplicationTests.class
+com\turnos\api\appointments\AppointmentControllerTest.class
+com\turnos\api\auth\AuthControllerTest.class
+com\turnos\api\users\UserTest.class
+com\turnos\api\services\ServiceTest.class
+com\turnos\api\appointments\AppointmentHistoryControllerTest$Dataset.class
+com\turnos\api\appointments\AppointmentTest.class
+com\turnos\api\professionals\ProfessionalTest.class
+com\turnos\api\appointments\AppointmentControllerTest$Fixture.class
+com\turnos\api\availability\AvailabilityControllerTest.class
