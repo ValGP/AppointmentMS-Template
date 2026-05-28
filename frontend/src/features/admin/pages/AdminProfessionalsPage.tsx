@@ -3,7 +3,11 @@ import { Edit3, Plus, Power, PowerOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
+import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
 import {
   createProfessional,
   getProfessionalServicesAssignment,
@@ -38,6 +42,9 @@ export function AdminProfessionalsPage() {
   const [assignmentMode, setAssignmentMode] =
     useState<ServiceAssignmentMode>("ALL_SERVICES");
   const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
+  const [statusTarget, setStatusTarget] = useState<Professional | null>(null);
+  const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const { showToast, toast } = useAdminToast();
 
   const professionalsQuery = useQuery({
     queryKey: ["professionals"],
@@ -54,12 +61,17 @@ export function AdminProfessionalsPage() {
   });
 
   const professionals = professionalsQuery.data ?? [];
+  const activeProfessionals = professionals.filter(
+    (professional) => professional.active,
+  );
+  const inactiveProfessionals = professionals.filter(
+    (professional) => !professional.active,
+  );
   const services = servicesQuery.data ?? [];
   const activeServices = services.filter((service) => service.active);
   const activeCount = useMemo(
-    () =>
-      professionals.filter((professional) => professional.active).length,
-    [professionals],
+    () => activeProfessionals.length,
+    [activeProfessionals.length],
   );
 
   const form = useForm<ProfessionalFormValues>({
@@ -85,9 +97,13 @@ export function AdminProfessionalsPage() {
       return savedProfessional;
     },
     onSuccess: async () => {
+      const message = editingProfessional
+        ? "Profesional actualizado."
+        : "Profesional creado.";
       await queryClient.invalidateQueries({ queryKey: ["professionals"] });
       await queryClient.invalidateQueries({ queryKey: ["services"] });
       closeForm();
+      showToast(message);
     },
     onError: (error) => {
       setFormError(
@@ -101,8 +117,13 @@ export function AdminProfessionalsPage() {
   const statusMutation = useMutation({
     mutationFn: ({ active, id }: { active: boolean; id: number }) =>
       setProfessionalActive(id, active),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["professionals"] }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["professionals"] });
+      setStatusTarget(null);
+      showToast(
+        variables.active ? "Profesional reactivado." : "Profesional desactivado.",
+      );
+    },
   });
 
   function openCreateForm() {
@@ -156,6 +177,7 @@ export function AdminProfessionalsPage() {
 
   return (
     <section className="catalog-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Catalogos</p>
@@ -174,7 +196,11 @@ export function AdminProfessionalsPage() {
       <div className="catalog-summary-grid">
         <SummaryCard label="Profesionales" value={professionals.length} />
         <SummaryCard label="Activos" value={activeCount} />
-        <SummaryCard label="Inactivos" value={professionals.length - activeCount} />
+        <SummaryCard
+          label="Inactivos"
+          value={inactiveProfessionals.length}
+          onClick={() => setIsInactiveOpen(true)}
+        />
       </div>
 
       {isFormOpen ? (
@@ -304,11 +330,11 @@ export function AdminProfessionalsPage() {
         ) : null}
         {!professionalsQuery.isLoading &&
         !professionalsQuery.isError &&
-        professionals.length === 0 ? (
-          <CatalogState label="Todavia no hay profesionales cargados." />
+        activeProfessionals.length === 0 ? (
+          <CatalogState label="No hay profesionales activos cargados." />
         ) : null}
 
-        {professionals.length > 0 ? (
+        {activeProfessionals.length > 0 ? (
           <div
             className="catalog-table professionals-table"
             role="table"
@@ -321,7 +347,7 @@ export function AdminProfessionalsPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {professionals.map((professional) => (
+            {activeProfessionals.map((professional) => (
               <div className="catalog-row" role="row" key={professional.id}>
                 <div className="catalog-main-cell">
                   <strong>{professional.fullName}</strong>
@@ -349,12 +375,7 @@ export function AdminProfessionalsPage() {
                     className="icon-button"
                     type="button"
                     disabled={statusMutation.isPending}
-                    onClick={() =>
-                      statusMutation.mutate({
-                        id: professional.id,
-                        active: !professional.active,
-                      })
-                    }
+                    onClick={() => setStatusTarget(professional)}
                     aria-label={
                       professional.active
                         ? `Desactivar ${professional.fullName}`
@@ -373,11 +394,74 @@ export function AdminProfessionalsPage() {
           </div>
         ) : null}
       </article>
+      {statusTarget ? (
+        <AdminConfirmDialog
+          title={
+            statusTarget.active
+              ? "Desactivar profesional"
+              : "Reactivar profesional"
+          }
+          message={
+            statusTarget.active
+              ? `${statusTarget.fullName} dejara de aparecer para nuevos turnos y disponibilidad. El historial no se borra.`
+              : `${statusTarget.fullName} volvera a poder atender segun sus servicios y horarios.`
+          }
+          confirmLabel={statusTarget.active ? "Desactivar" : "Reactivar"}
+          tone={statusTarget.active ? "danger" : "primary"}
+          isPending={statusMutation.isPending}
+          onCancel={() => setStatusTarget(null)}
+          onConfirm={() =>
+            statusMutation.mutate({
+              id: statusTarget.id,
+              active: !statusTarget.active,
+            })
+          }
+        />
+      ) : null}
+      {isInactiveOpen ? (
+        <AdminInactiveItemsModal
+          title="Profesionales inactivos"
+          emptyLabel="No hay profesionales inactivos."
+          items={inactiveProfessionals.map((professional) => ({
+            id: professional.id,
+            title: professional.fullName,
+            description: professional.email,
+          }))}
+          onClose={() => setIsInactiveOpen(false)}
+          onReactivate={(id) => {
+            const professional = inactiveProfessionals.find((item) => item.id === id);
+            if (professional) {
+              setStatusTarget(professional);
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  onClick,
+  value,
+}: {
+  label: string;
+  onClick?: () => void;
+  value: number;
+}) {
+  if (onClick) {
+    return (
+      <button
+        className="admin-card catalog-summary-card is-action"
+        type="button"
+        onClick={onClick}
+      >
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </button>
+    );
+  }
+
   return (
     <article className="admin-card catalog-summary-card">
       <span>{label}</span>

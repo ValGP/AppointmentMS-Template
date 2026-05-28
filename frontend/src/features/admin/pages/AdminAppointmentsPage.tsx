@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../../shared/api/httpClient";
 import {
@@ -36,6 +35,10 @@ import {
 } from "../../appointments/api/appointmentsApi";
 import { getClients } from "../../clients/api/clientsApi";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
+import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminModal } from "../components/AdminModal";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
 
 const statusOptions: Array<{ label: string; value: AppointmentStatus }> = [
   { label: "Pendiente", value: "PENDING" },
@@ -70,6 +73,39 @@ type Filters = {
 };
 
 type TransitionAction = "reject" | "cancel";
+type SimpleAction = "confirm" | "complete" | "no-show";
+
+const simpleActionLabels: Record<
+  SimpleAction,
+  {
+    confirmLabel: string;
+    message: (appointment: Appointment) => string;
+    success: string;
+    title: string;
+  }
+> = {
+  confirm: {
+    confirmLabel: "Confirmar",
+    message: (appointment) =>
+      `Vas a confirmar el turno de ${appointment.clientName}. Esta accion cambia el estado del turno.`,
+    success: "Turno confirmado.",
+    title: "Confirmar turno",
+  },
+  complete: {
+    confirmLabel: "Completar",
+    message: (appointment) =>
+      `Vas a marcar como completado el turno de ${appointment.clientName}.`,
+    success: "Turno completado.",
+    title: "Completar turno",
+  },
+  "no-show": {
+    confirmLabel: "Marcar no-show",
+    message: (appointment) =>
+      `Vas a marcar que ${appointment.clientName} no asistio al turno.`,
+    success: "Turno marcado como no asistio.",
+    title: "Marcar no-show",
+  },
+};
 
 const initialStart = startOfWeek(new Date());
 const initialEnd = endOfDay(addDays(initialStart, 13));
@@ -112,8 +148,13 @@ export function AdminAppointmentsPage() {
     action: TransitionAction;
     appointment: Appointment;
   } | null>(null);
+  const [simpleAction, setSimpleAction] = useState<{
+    action: SimpleAction;
+    appointment: Appointment;
+  } | null>(null);
   const [transitionReason, setTransitionReason] = useState("");
   const [transitionError, setTransitionError] = useState<string | null>(null);
+  const { showToast, toast } = useAdminToast();
 
   const appointmentsQuery = useQuery({
     queryKey: ["admin-appointments", filters, page],
@@ -156,7 +197,7 @@ export function AdminAppointmentsPage() {
       action,
       id,
     }: {
-      action: "confirm" | "complete" | "no-show";
+      action: SimpleAction;
       id: number;
     }) => {
       if (action === "confirm") {
@@ -167,7 +208,18 @@ export function AdminAppointmentsPage() {
       }
       return markAppointmentNoShow(id);
     },
-    onSuccess: () => refreshAppointments(),
+    onSuccess: async (_data, variables) => {
+      await refreshAppointments();
+      setSimpleAction(null);
+      showToast(simpleActionLabels[variables.action].success);
+    },
+    onError: (error) =>
+      showToast(
+        error instanceof ApiError
+          ? error.message
+          : "No se pudo actualizar el turno.",
+        "danger",
+      ),
   });
 
   const transitionMutation = useMutation({
@@ -183,9 +235,12 @@ export function AdminAppointmentsPage() {
       action === "reject"
         ? rejectAppointment(id, { reason })
         : cancelAppointmentByAdmin(id, { reason }),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       await refreshAppointments();
       closeTransitionModal();
+      showToast(
+        variables.action === "reject" ? "Turno rechazado." : "Turno cancelado.",
+      );
     },
     onError: (error) =>
       setTransitionError(
@@ -252,6 +307,7 @@ export function AdminAppointmentsPage() {
 
   return (
     <section className="appointments-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Agenda</p>
@@ -413,22 +469,13 @@ export function AdminAppointmentsPage() {
                       key={appointment.id}
                       onCancel={() => openTransitionModal("cancel", appointment)}
                       onComplete={() =>
-                        simpleActionMutation.mutate({
-                          action: "complete",
-                          id: appointment.id,
-                        })
+                        setSimpleAction({ action: "complete", appointment })
                       }
                       onConfirm={() =>
-                        simpleActionMutation.mutate({
-                          action: "confirm",
-                          id: appointment.id,
-                        })
+                        setSimpleAction({ action: "confirm", appointment })
                       }
                       onNoShow={() =>
-                        simpleActionMutation.mutate({
-                          action: "no-show",
-                          id: appointment.id,
-                        })
+                        setSimpleAction({ action: "no-show", appointment })
                       }
                       onReject={() => openTransitionModal("reject", appointment)}
                     />
@@ -441,7 +488,7 @@ export function AdminAppointmentsPage() {
       </article>
 
       {transition ? (
-        <Modal
+        <AdminModal
           title={
             transition.action === "reject" ? "Rechazar turno" : "Cancelar turno"
           }
@@ -482,7 +529,25 @@ export function AdminAppointmentsPage() {
               {transitionMutation.isPending ? "Guardando..." : "Confirmar"}
             </button>
           </div>
-        </Modal>
+        </AdminModal>
+      ) : null}
+
+      {simpleAction ? (
+        <AdminConfirmDialog
+          title={simpleActionLabels[simpleAction.action].title}
+          message={simpleActionLabels[simpleAction.action].message(
+            simpleAction.appointment,
+          )}
+          confirmLabel={simpleActionLabels[simpleAction.action].confirmLabel}
+          isPending={simpleActionMutation.isPending}
+          onCancel={() => setSimpleAction(null)}
+          onConfirm={() =>
+            simpleActionMutation.mutate({
+              action: simpleAction.action,
+              id: simpleAction.appointment.id,
+            })
+          }
+        />
       ) : null}
     </section>
   );
@@ -598,40 +663,6 @@ function AppointmentAdminRow({
         ) : null}
       </div>
     </article>
-  );
-}
-
-function Modal({
-  children,
-  kicker,
-  onClose,
-  title,
-}: {
-  children: ReactNode;
-  kicker: string;
-  onClose: () => void;
-  title: string;
-}) {
-  return (
-    <div className="admin-modal-backdrop" role="presentation">
-      <section className="admin-modal" role="dialog" aria-modal="true">
-        <div className="card-heading">
-          <div>
-            <p className="admin-kicker">{kicker}</p>
-            <h3>{title}</h3>
-          </div>
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-          >
-            <X aria-hidden="true" size={18} />
-          </button>
-        </div>
-        {children}
-      </section>
-    </div>
   );
 }
 

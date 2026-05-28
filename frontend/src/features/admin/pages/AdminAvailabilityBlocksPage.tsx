@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatShortDateTime } from "../../../shared/utils/date";
+import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
 import {
   createAvailabilityBlock,
   getAvailabilityBlocks,
@@ -45,6 +49,9 @@ export function AdminAvailabilityBlocksPage() {
   const [editingItem, setEditingItem] = useState<AvailabilityBlock | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusTarget, setStatusTarget] = useState<AvailabilityBlock | null>(null);
+  const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const { showToast, toast } = useAdminToast();
 
   const blocksQuery = useQuery({
     queryKey: ["availability-blocks"],
@@ -56,6 +63,8 @@ export function AdminAvailabilityBlocksPage() {
   });
 
   const blocks = blocksQuery.data ?? [];
+  const activeBlocks = blocks.filter((item) => item.active);
+  const inactiveBlocks = blocks.filter((item) => !item.active);
   const professionals = professionalsQuery.data ?? [];
 
   const form = useForm<AvailabilityBlockFormValues>({
@@ -74,8 +83,10 @@ export function AdminAvailabilityBlocksPage() {
         ? updateAvailabilityBlock(editingItem.id, payload)
         : createAvailabilityBlock(payload),
     onSuccess: async () => {
+      const message = editingItem ? "Bloqueo actualizado." : "Bloqueo creado.";
       await queryClient.invalidateQueries({ queryKey: ["availability-blocks"] });
       closeForm();
+      showToast(message);
     },
     onError: (error) =>
       setFormError(
@@ -88,8 +99,11 @@ export function AdminAvailabilityBlocksPage() {
   const statusMutation = useMutation({
     mutationFn: ({ active, id }: { active: boolean; id: number }) =>
       setAvailabilityBlockActive(id, active),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["availability-blocks"] }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["availability-blocks"] });
+      setStatusTarget(null);
+      showToast(variables.active ? "Bloqueo reactivado." : "Bloqueo desactivado.");
+    },
   });
 
   function openCreateForm() {
@@ -137,6 +151,7 @@ export function AdminAvailabilityBlocksPage() {
 
   return (
     <section className="catalog-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Agenda</p>
@@ -241,6 +256,16 @@ export function AdminAvailabilityBlocksPage() {
         </AdminModal>
       ) : null}
 
+      <div className="catalog-summary-grid">
+        <SummaryCard label="Bloqueos" value={blocks.length} />
+        <SummaryCard label="Activos" value={activeBlocks.length} />
+        <SummaryCard
+          label="Inactivos"
+          value={inactiveBlocks.length}
+          onClick={() => setIsInactiveOpen(true)}
+        />
+      </div>
+
       <article className="admin-card catalog-list-card">
         <div className="card-heading">
           <div>
@@ -251,11 +276,11 @@ export function AdminAvailabilityBlocksPage() {
 
         {blocksQuery.isLoading ? <CatalogState label="Cargando bloqueos..." /> : null}
         {blocksQuery.isError ? <CatalogState label="No se pudieron cargar los bloqueos." /> : null}
-        {!blocksQuery.isLoading && !blocksQuery.isError && blocks.length === 0 ? (
-          <CatalogState label="Todavia no hay bloqueos cargados." />
+        {!blocksQuery.isLoading && !blocksQuery.isError && activeBlocks.length === 0 ? (
+          <CatalogState label="No hay bloqueos activos cargados." />
         ) : null}
 
-        {blocks.length > 0 ? (
+        {activeBlocks.length > 0 ? (
           <div className="catalog-table availability-blocks-table">
             <div className="catalog-table-head">
               <span>Profesional</span>
@@ -265,7 +290,7 @@ export function AdminAvailabilityBlocksPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {blocks.map((item) => (
+            {activeBlocks.map((item) => (
               <div className="catalog-row" key={item.id}>
                 <div className="catalog-main-cell">
                   <strong>{item.professionalName}</strong>
@@ -285,7 +310,7 @@ export function AdminAvailabilityBlocksPage() {
                     className="icon-button"
                     type="button"
                     disabled={statusMutation.isPending}
-                    onClick={() => statusMutation.mutate({ id: item.id, active: !item.active })}
+                    onClick={() => setStatusTarget(item)}
                     aria-label={item.active ? `Desactivar bloqueo ${item.id}` : `Activar bloqueo ${item.id}`}
                   >
                     {item.active ? <PowerOff aria-hidden="true" size={16} /> : <Power aria-hidden="true" size={16} />}
@@ -296,12 +321,80 @@ export function AdminAvailabilityBlocksPage() {
           </div>
         ) : null}
       </article>
+      {statusTarget ? (
+        <AdminConfirmDialog
+          title={statusTarget.active ? "Desactivar bloqueo" : "Reactivar bloqueo"}
+          message={
+            statusTarget.active
+              ? `Este bloqueo de ${statusTarget.professionalName} dejara de afectar la disponibilidad.`
+              : `Este bloqueo de ${statusTarget.professionalName} volvera a afectar la disponibilidad.`
+          }
+          confirmLabel={statusTarget.active ? "Desactivar" : "Reactivar"}
+          tone={statusTarget.active ? "danger" : "primary"}
+          isPending={statusMutation.isPending}
+          onCancel={() => setStatusTarget(null)}
+          onConfirm={() =>
+            statusMutation.mutate({
+              id: statusTarget.id,
+              active: !statusTarget.active,
+            })
+          }
+        />
+      ) : null}
+      {isInactiveOpen ? (
+        <AdminInactiveItemsModal
+          title="Bloqueos inactivos"
+          emptyLabel="No hay bloqueos inactivos."
+          items={inactiveBlocks.map((item) => ({
+            id: item.id,
+            title: item.professionalName,
+            description: `${blockTypeLabels[item.type]} - ${formatShortDateTime(item.startDateTime)}`,
+          }))}
+          onClose={() => setIsInactiveOpen(false)}
+          onReactivate={(id) => {
+            const item = inactiveBlocks.find((block) => block.id === id);
+            if (item) {
+              setStatusTarget(item);
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }
 
 function FieldError({ message }: { message?: string }) {
   return message ? <span className="field-error">{message}</span> : null;
+}
+
+function SummaryCard({
+  label,
+  onClick,
+  value,
+}: {
+  label: string;
+  onClick?: () => void;
+  value: number;
+}) {
+  if (onClick) {
+    return (
+      <button
+        className="admin-card catalog-summary-card is-action"
+        type="button"
+        onClick={onClick}
+      >
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </button>
+    );
+  }
+
+  return (
+    <article className="admin-card catalog-summary-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </article>
+  );
 }
 
 function CatalogState({ label }: { label: string }) {

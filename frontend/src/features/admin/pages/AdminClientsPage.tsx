@@ -1,9 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff } from "lucide-react";
+import { Edit3, History, Plus, Power, PowerOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
+import { formatShortDateTime } from "../../../shared/utils/date";
+import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
+import {
+  getAppointments,
+  type Appointment,
+  type AppointmentStatus,
+} from "../../appointments/api/appointmentsApi";
 import {
   createClient,
   getClients,
@@ -27,21 +37,62 @@ const emptyValues: ClientFormValues = {
   password: "",
 };
 
+const statusOptions: Array<{ label: string; value: AppointmentStatus }> = [
+  { label: "Pendiente", value: "PENDING" },
+  { label: "Confirmado", value: "CONFIRMED" },
+  { label: "Rechazado", value: "REJECTED" },
+  { label: "Cancelado cliente", value: "CANCELED_BY_CLIENT" },
+  { label: "Cancelado admin", value: "CANCELED_BY_ADMIN" },
+  { label: "Completado", value: "COMPLETED" },
+  { label: "No asistio", value: "NO_SHOW" },
+];
+
+const statusLabels = Object.fromEntries(
+  statusOptions.map((status) => [status.value, status.label]),
+) as Record<AppointmentStatus, string>;
+
+const statusTone: Record<AppointmentStatus, string> = {
+  PENDING: "warning",
+  CONFIRMED: "success",
+  REJECTED: "danger",
+  CANCELED_BY_CLIENT: "muted",
+  CANCELED_BY_ADMIN: "muted",
+  COMPLETED: "success",
+  NO_SHOW: "danger",
+};
+
 export function AdminClientsPage() {
   const queryClient = useQueryClient();
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusTarget, setStatusTarget] = useState<Client | null>(null);
+  const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const [historyClient, setHistoryClient] = useState<Client | null>(null);
+  const { showToast, toast } = useAdminToast();
 
   const clientsQuery = useQuery({
     queryKey: ["clients"],
     queryFn: getClients,
   });
+  const historyQuery = useQuery({
+    queryKey: ["client-appointments-history", historyClient?.id],
+    enabled: Boolean(historyClient),
+    queryFn: () =>
+      getAppointments({
+        clientId: historyClient!.id,
+        page: 0,
+        size: 100,
+        sort: "startDateTime,desc",
+      }),
+  });
 
   const clients = clientsQuery.data ?? [];
+  const activeClients = clients.filter((client) => client.active);
+  const inactiveClients = clients.filter((client) => !client.active);
   const activeCount = useMemo(
-    () => clients.filter((client) => client.active).length,
-    [clients],
+    () => activeClients.length,
+    [activeClients.length],
   );
 
   const form = useForm<ClientFormValues>({
@@ -52,8 +103,10 @@ export function AdminClientsPage() {
     mutationFn: (payload: ClientPayload) =>
       editingClient ? updateClient(editingClient.id, payload) : createClient(payload),
     onSuccess: async () => {
+      const message = editingClient ? "Cliente actualizado." : "Cliente creado.";
       await queryClient.invalidateQueries({ queryKey: ["clients"] });
       closeForm();
+      showToast(message);
     },
     onError: (error) => {
       setFormError(
@@ -67,7 +120,11 @@ export function AdminClientsPage() {
   const statusMutation = useMutation({
     mutationFn: ({ active, id }: { active: boolean; id: number }) =>
       setClientActive(id, active),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["clients"] }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      setStatusTarget(null);
+      showToast(variables.active ? "Cliente reactivado." : "Cliente desactivado.");
+    },
   });
 
   function openCreateForm() {
@@ -108,6 +165,7 @@ export function AdminClientsPage() {
 
   return (
     <section className="catalog-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Catalogos</p>
@@ -126,7 +184,11 @@ export function AdminClientsPage() {
       <div className="catalog-summary-grid">
         <SummaryCard label="Clientes" value={clients.length} />
         <SummaryCard label="Activos" value={activeCount} />
-        <SummaryCard label="Inactivos" value={clients.length - activeCount} />
+        <SummaryCard
+          label="Inactivos"
+          value={inactiveClients.length}
+          onClick={() => setIsInactiveOpen(true)}
+        />
       </div>
 
       {isFormOpen ? (
@@ -232,11 +294,11 @@ export function AdminClientsPage() {
         {clientsQuery.isError ? (
           <CatalogState label="No se pudieron cargar los clientes." />
         ) : null}
-        {!clientsQuery.isLoading && !clientsQuery.isError && clients.length === 0 ? (
-          <CatalogState label="Todavia no hay clientes cargados." />
+        {!clientsQuery.isLoading && !clientsQuery.isError && activeClients.length === 0 ? (
+          <CatalogState label="No hay clientes activos cargados." />
         ) : null}
 
-        {clients.length > 0 ? (
+        {activeClients.length > 0 ? (
           <div className="catalog-table clients-table" role="table" aria-label="Clientes">
             <div className="catalog-table-head" role="row">
               <span>Cliente</span>
@@ -246,7 +308,7 @@ export function AdminClientsPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {clients.map((client) => (
+            {activeClients.map((client) => (
               <div className="catalog-row" role="row" key={client.id}>
                 <div className="catalog-main-cell">
                   <strong>{client.fullName}</strong>
@@ -266,6 +328,15 @@ export function AdminClientsPage() {
                   <button
                     className="icon-button"
                     type="button"
+                    onClick={() => setHistoryClient(client)}
+                    aria-label={`Ver historial de ${client.fullName}`}
+                    title="Historial"
+                  >
+                    <History aria-hidden="true" size={16} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    type="button"
                     onClick={() => openEditForm(client)}
                     aria-label={`Editar ${client.fullName}`}
                   >
@@ -275,12 +346,7 @@ export function AdminClientsPage() {
                     className="icon-button"
                     type="button"
                     disabled={statusMutation.isPending}
-                    onClick={() =>
-                      statusMutation.mutate({
-                        id: client.id,
-                        active: !client.active,
-                      })
-                    }
+                    onClick={() => setStatusTarget(client)}
                     aria-label={
                       client.active
                         ? `Desactivar ${client.fullName}`
@@ -299,6 +365,53 @@ export function AdminClientsPage() {
           </div>
         ) : null}
       </article>
+      {statusTarget ? (
+        <AdminConfirmDialog
+          title={statusTarget.active ? "Desactivar cliente" : "Reactivar cliente"}
+          message={
+            statusTarget.active
+              ? `${statusTarget.fullName} no podra operar como cliente activo mientras este desactivado. Sus turnos e historial no se borran.`
+              : `${statusTarget.fullName} volvera a quedar disponible como cliente activo.`
+          }
+          confirmLabel={statusTarget.active ? "Desactivar" : "Reactivar"}
+          tone={statusTarget.active ? "danger" : "primary"}
+          isPending={statusMutation.isPending}
+          onCancel={() => setStatusTarget(null)}
+          onConfirm={() =>
+            statusMutation.mutate({
+              id: statusTarget.id,
+              active: !statusTarget.active,
+            })
+          }
+        />
+      ) : null}
+      {isInactiveOpen ? (
+        <AdminInactiveItemsModal
+          title="Clientes inactivos"
+          emptyLabel="No hay clientes inactivos."
+          items={inactiveClients.map((client) => ({
+            id: client.id,
+            title: client.fullName,
+            description: client.email,
+          }))}
+          onClose={() => setIsInactiveOpen(false)}
+          onReactivate={(id) => {
+            const client = inactiveClients.find((item) => item.id === id);
+            if (client) {
+              setStatusTarget(client);
+            }
+          }}
+        />
+      ) : null}
+      {historyClient ? (
+        <ClientHistoryModal
+          appointments={historyQuery.data?.content ?? []}
+          client={historyClient}
+          isError={historyQuery.isError}
+          isLoading={historyQuery.isLoading}
+          onClose={() => setHistoryClient(null)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -311,7 +424,28 @@ function formatCreatedAt(value: string) {
   }).format(new Date(value));
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  onClick,
+  value,
+}: {
+  label: string;
+  onClick?: () => void;
+  value: number;
+}) {
+  if (onClick) {
+    return (
+      <button
+        className="admin-card catalog-summary-card is-action"
+        type="button"
+        onClick={onClick}
+      >
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </button>
+    );
+  }
+
   return (
     <article className="admin-card catalog-summary-card">
       <span>{label}</span>
@@ -326,4 +460,52 @@ function FieldError({ message }: { message?: string }) {
 
 function CatalogState({ label }: { label: string }) {
   return <div className="dashboard-state">{label}</div>;
+}
+
+function ClientHistoryModal({
+  appointments,
+  client,
+  isError,
+  isLoading,
+  onClose,
+}: {
+  appointments: Appointment[];
+  client: Client;
+  isError: boolean;
+  isLoading: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <AdminModal
+      kicker="Historial"
+      title={`Turnos de ${client.fullName}`}
+      onClose={onClose}
+    >
+      {isLoading ? <CatalogState label="Cargando historial..." /> : null}
+      {isError ? <CatalogState label="No se pudo cargar el historial." /> : null}
+      {!isLoading && !isError && appointments.length === 0 ? (
+        <CatalogState label="Este cliente todavia no tiene turnos registrados." />
+      ) : null}
+
+      {appointments.length > 0 ? (
+        <div className="client-history-list">
+          {appointments.map((appointment) => (
+            <article className="client-history-row" key={appointment.id}>
+              <div>
+                <strong>{formatShortDateTime(appointment.startDateTime)}</strong>
+                <span>{appointment.serviceName}</span>
+              </div>
+              <div>
+                <strong>{appointment.professionalName}</strong>
+                <span>{appointment.notes || "Sin notas"}</span>
+              </div>
+              <span className={`status-badge tone-${statusTone[appointment.status]}`}>
+                {statusLabels[appointment.status]}
+              </span>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </AdminModal>
+  );
 }

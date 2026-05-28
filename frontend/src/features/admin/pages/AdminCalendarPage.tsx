@@ -22,6 +22,8 @@ import { getAvailability, type AvailabilitySlot } from "../../availability/api/a
 import { getClients } from "../../clients/api/clientsApi";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
 import { getServices } from "../../services/api/servicesApi";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
 
 type AppointmentFormValues = {
   clientId: number;
@@ -85,6 +87,7 @@ export function AdminCalendarPage() {
   const [serviceId, setServiceId] = useState<number>(0);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const { showToast, toast } = useAdminToast();
 
   const professionalsQuery = useQuery({
     queryKey: ["professionals"],
@@ -103,12 +106,15 @@ export function AdminCalendarPage() {
     (professional) => professional.active,
   );
   const allActiveServices = allServices.filter((service) => service.active);
-  const requestedServiceId = serviceId || allActiveServices[0]?.id || 0;
+  const serviceOptions = allActiveServices;
+  const selectedServiceId = serviceOptions.some((service) => service.id === serviceId)
+    ? serviceId
+    : 0;
 
   const compatibleProfessionalsQuery = useQuery({
-    queryKey: ["professionals", "compatible-service", requestedServiceId],
-    enabled: requestedServiceId > 0,
-    queryFn: () => getProfessionals({ serviceId: requestedServiceId }),
+    queryKey: ["professionals", "compatible-service", selectedServiceId],
+    enabled: selectedServiceId > 0,
+    queryFn: () => getProfessionals({ serviceId: selectedServiceId }),
   });
 
   const professionalOptions = (
@@ -118,34 +124,25 @@ export function AdminCalendarPage() {
     professionalId &&
     professionalOptions.some((professional) => professional.id === professionalId)
       ? professionalId
-      : professionalOptions[0]?.id || 0;
-
-  const compatibleServicesQuery = useQuery({
-    queryKey: ["services", "compatible-professional", selectedProfessionalId],
-    enabled: selectedProfessionalId > 0,
-    queryFn: () => getServices({ professionalId: selectedProfessionalId }),
-  });
-
-  const serviceOptions = (compatibleServicesQuery.data ?? allActiveServices).filter(
-    (service) => service.active,
-  );
-  const selectedServiceId =
-    requestedServiceId &&
-    serviceOptions.some((service) => service.id === requestedServiceId)
-      ? requestedServiceId
-      : serviceOptions[0]?.id || 0;
+      : 0;
   const activeClients = clients.filter((client) => client.active);
+  const selectedProfessional = professionalOptions.find(
+    (professional) => professional.id === selectedProfessionalId,
+  );
+  const selectedService = serviceOptions.find(
+    (service) => service.id === selectedServiceId,
+  );
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
   useEffect(() => {
-    if (selectedProfessionalId > 0 && selectedProfessionalId !== professionalId) {
-      setProfessionalId(selectedProfessionalId);
+    if (professionalId > 0 && selectedProfessionalId === 0) {
+      setProfessionalId(0);
     }
   }, [professionalId, selectedProfessionalId]);
 
   useEffect(() => {
-    if (selectedServiceId > 0 && selectedServiceId !== serviceId) {
-      setServiceId(selectedServiceId);
+    if (serviceId > 0 && selectedServiceId === 0) {
+      setServiceId(0);
     }
   }, [serviceId, selectedServiceId]);
 
@@ -220,6 +217,10 @@ export function AdminCalendarPage() {
       notes: "",
     },
   });
+  const selectedClientId = createForm.watch("clientId");
+  const selectedClient = activeClients.find(
+    (client) => client.id === Number(selectedClientId),
+  );
 
   const createMutation = useMutation({
     mutationFn: (payload: AppointmentPayload) => createAppointment(payload),
@@ -231,6 +232,7 @@ export function AdminCalendarPage() {
         queryClient.invalidateQueries({ queryKey: ["availability"] }),
       ]);
       closeSlotModal();
+      showToast("Turno creado.");
     },
     onError: (error) =>
       setFormError(
@@ -244,6 +246,17 @@ export function AdminCalendarPage() {
 
   function resetWeek() {
     setWeekStart(currentWeekStart);
+  }
+
+  function resetCalendarFilters() {
+    setWeekStart(currentWeekStart);
+    setServiceId(0);
+    setProfessionalId(0);
+  }
+
+  function updateServiceFilter(nextServiceId: number) {
+    setServiceId(nextServiceId);
+    setProfessionalId(0);
   }
 
   function openSlotModal(slot: AvailabilitySlot) {
@@ -277,13 +290,28 @@ export function AdminCalendarPage() {
   }
 
   const isLoading =
+    servicesQuery.isLoading ||
+    professionalsQuery.isLoading ||
+    compatibleProfessionalsQuery.isLoading ||
     appointmentsQuery.isLoading ||
     availabilityQueries.some((query) => query.isLoading);
   const hasError =
-    appointmentsQuery.isError || availabilityQueries.some((query) => query.isError);
+    servicesQuery.isError ||
+    professionalsQuery.isError ||
+    compatibleProfessionalsQuery.isError ||
+    appointmentsQuery.isError ||
+    availabilityQueries.some((query) => query.isError);
+  const emptyStateLabel = getCalendarEmptyStateLabel({
+    hasActiveServices: allActiveServices.length > 0,
+    hasCompatibleProfessionals: professionalOptions.length > 0,
+    hasSelection: selectedProfessionalId > 0 && selectedServiceId > 0,
+    professionalName: selectedProfessional?.fullName,
+    serviceName: selectedService?.name,
+  });
 
   return (
     <section className="calendar-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Disponibilidad</p>
@@ -298,11 +326,34 @@ export function AdminCalendarPage() {
       <article className="admin-card calendar-toolbar">
         <div className="calendar-filters">
           <label>
+            Servicio
+            <select
+              value={selectedServiceId}
+              onChange={(event) => updateServiceFilter(Number(event.target.value))}
+            >
+              <option value={0}>Seleccionar servicio</option>
+              {serviceOptions.length === 0 ? (
+                <option value={0}>Sin servicios activos</option>
+              ) : null}
+              {serviceOptions.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             Profesional
             <select
               value={selectedProfessionalId}
               onChange={(event) => setProfessionalId(Number(event.target.value))}
+              disabled={selectedServiceId === 0}
             >
+              <option value={0}>
+                {selectedServiceId === 0
+                  ? "Primero selecciona servicio"
+                  : "Seleccionar profesional"}
+              </option>
               {professionalOptions.length === 0 ? (
                 <option value={0}>Sin profesionales compatibles</option>
               ) : null}
@@ -313,22 +364,10 @@ export function AdminCalendarPage() {
               ))}
             </select>
           </label>
-          <label>
-            Servicio
-            <select
-              value={selectedServiceId}
-              onChange={(event) => setServiceId(Number(event.target.value))}
-            >
-              {serviceOptions.length === 0 ? (
-                <option value={0}>Sin servicios compatibles</option>
-              ) : null}
-              {serviceOptions.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <button className="admin-soft-button" type="button" onClick={resetCalendarFilters}>
+            <RotateCcw aria-hidden="true" size={16} />
+            Restablecer filtros
+          </button>
         </div>
 
         <div className="week-switcher" aria-label="Cambiar semana">
@@ -365,8 +404,8 @@ export function AdminCalendarPage() {
           <span className="window-pill">{timeRows.length} horarios</span>
         </div>
 
-        {selectedProfessionalId === 0 || selectedServiceId === 0 ? (
-          <CalendarState label="Carga al menos un profesional compatible y un servicio compatible." />
+        {emptyStateLabel && !isLoading && !hasError ? (
+          <CalendarState label={emptyStateLabel} />
         ) : null}
         {isLoading ? <CalendarState label="Calculando disponibilidad..." /> : null}
         {hasError ? (
@@ -377,10 +416,16 @@ export function AdminCalendarPage() {
         selectedProfessionalId > 0 &&
         selectedServiceId > 0 &&
         timeRows.length === 0 ? (
-          <CalendarState label="No hay disponibilidad ni turnos ocupados en esta semana." />
+          <CalendarState
+            label={`No hay horarios disponibles ni turnos ocupados para ${selectedProfessional?.fullName ?? "este profesional"} con ${selectedService?.name ?? "este servicio"} en esta semana. Revisa horarios laborales, bloqueos o turnos existentes.`}
+          />
         ) : null}
 
-        {!isLoading && !hasError && timeRows.length > 0 ? (
+        {!isLoading &&
+        !hasError &&
+        selectedProfessionalId > 0 &&
+        selectedServiceId > 0 &&
+        timeRows.length > 0 ? (
           <>
             <div className="availability-grid" role="table" aria-label="Disponibilidad semanal">
               <div className="availability-grid-head" role="row">
@@ -451,9 +496,27 @@ export function AdminCalendarPage() {
 
       {selectedSlot ? (
         <Modal title="Crear turno" kicker="Slot disponible" onClose={closeSlotModal}>
-          <div className="transition-summary">
-            <strong>{formatShortDateTime(selectedSlot.startDateTime)}</strong>
-            <span>{formatTime(selectedSlot.startDateTime)} - {formatTime(selectedSlot.endDateTime)}</span>
+          <div className="appointment-create-summary">
+            <div>
+              <span>Cliente</span>
+              <strong>{selectedClient?.fullName ?? "Seleccionar cliente"}</strong>
+            </div>
+            <div>
+              <span>Servicio</span>
+              <strong>{selectedService?.name ?? "Sin servicio"}</strong>
+            </div>
+            <div>
+              <span>Profesional</span>
+              <strong>{selectedProfessional?.fullName ?? "Sin profesional"}</strong>
+            </div>
+            <div>
+              <span>Dia y horario</span>
+              <strong>{formatShortDateTime(selectedSlot.startDateTime)}</strong>
+              <small>
+                {formatTime(selectedSlot.startDateTime)} -{" "}
+                {formatTime(selectedSlot.endDateTime)}
+              </small>
+            </div>
           </div>
           <form className="admin-form-grid" onSubmit={createForm.handleSubmit(createFromSlot)}>
             <label className="form-span-2">
@@ -574,6 +637,33 @@ function getDayItems(slots: AvailabilitySlot[], appointments: Appointment[]) {
     const bDate = b.type === "slot" ? b.slot.startDateTime : b.appointment.startDateTime;
     return new Date(aDate).getTime() - new Date(bDate).getTime();
   });
+}
+
+function getCalendarEmptyStateLabel({
+  hasActiveServices,
+  hasCompatibleProfessionals,
+  hasSelection,
+  serviceName,
+}: {
+  hasActiveServices: boolean;
+  hasCompatibleProfessionals: boolean;
+  hasSelection: boolean;
+  professionalName?: string;
+  serviceName?: string;
+}) {
+  if (!hasActiveServices) {
+    return "No hay servicios activos. Activa o carga un servicio antes de revisar disponibilidad.";
+  }
+
+  if (!hasCompatibleProfessionals) {
+    return `No hay profesionales activos compatibles con ${serviceName ?? "este servicio"}. Revisa la asignacion profesional-servicio o activa un profesional.`;
+  }
+
+  if (!hasSelection) {
+    return "Selecciona un servicio y un profesional compatible para revisar disponibilidad.";
+  }
+
+  return null;
 }
 
 function Modal({

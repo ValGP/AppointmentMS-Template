@@ -5,12 +5,22 @@ type AdminModalProps = {
   children: ReactNode;
   kicker: string;
   onClose: () => void;
+  stack?: "base" | "top";
   title: string;
 };
 
-export function AdminModal({ children, kicker, onClose, title }: AdminModalProps) {
+export function AdminModal({
+  children,
+  kicker,
+  onClose,
+  stack = "base",
+  title,
+}: AdminModalProps) {
   return (
-    <div className="admin-modal-backdrop" role="presentation">
+    <div
+      className={`admin-modal-backdrop ${stack === "top" ? "is-top" : ""}`}
+      role="presentation"
+    >
       <section className="admin-modal" role="dialog" aria-modal="true">
         <div className="card-heading">
           <div>

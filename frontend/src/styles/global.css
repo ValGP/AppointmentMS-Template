@@ -566,6 +566,7 @@ p {
 .icon-button,
 .admin-soft-button,
 .admin-primary-button,
+.admin-danger-button,
 .quick-action {
   display: inline-flex;
   align-items: center;
@@ -642,7 +643,8 @@ p {
 }
 
 .admin-soft-button,
-.admin-primary-button {
+.admin-primary-button,
+.admin-danger-button {
   min-height: 40px;
   gap: 8px;
   border: 1px solid var(--admin-border);
@@ -660,6 +662,12 @@ p {
   border-color: transparent;
   background: var(--admin-brand-strong);
   color: #ffffff;
+}
+
+.admin-danger-button {
+  border-color: rgba(251, 113, 133, 0.45);
+  background: rgba(251, 113, 133, 0.18);
+  color: var(--admin-danger);
 }
 
 .metric-grid {
@@ -923,6 +931,40 @@ p {
   padding: 18px;
 }
 
+.catalog-summary-card.is-action {
+  width: 100%;
+  border: 1px solid var(--admin-border);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.catalog-summary-card.is-action:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.catalog-summary-card.is-action:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--admin-brand) 58%, var(--admin-border));
+}
+
+.catalog-summary-card.is-action span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.catalog-summary-card.is-action span:first-child::after {
+  content: "Ver";
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  color: var(--admin-text-soft);
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+
 .catalog-summary-card span {
   color: var(--admin-text-muted);
   font-weight: 800;
@@ -1125,8 +1167,9 @@ p {
 
 .calendar-filters {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(220px, 1fr)) auto;
   gap: 14px;
+  align-items: end;
 }
 
 .calendar-filters label {
@@ -1145,6 +1188,10 @@ p {
   color: var(--admin-text-main);
   padding: 0 12px;
   outline: 0;
+}
+
+.calendar-filters .admin-soft-button {
+  min-height: 42px;
 }
 
 .calendar-filters select:focus {
@@ -1351,6 +1398,10 @@ p {
   padding: 22px;
 }
 
+.admin-modal-backdrop.is-top {
+  z-index: 45;
+}
+
 .admin-modal {
   width: min(760px, 100%);
   max-height: min(760px, calc(100vh - 44px));
@@ -1360,6 +1411,34 @@ p {
   background: var(--admin-panel);
   box-shadow: 0 26px 80px rgba(0, 0, 0, 0.35);
   padding: 22px;
+}
+
+.confirm-message {
+  margin: 0 0 18px;
+  color: var(--admin-text-soft);
+  line-height: 1.6;
+}
+
+.admin-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: min(420px, calc(100vw - 32px));
+  border: 1px solid rgba(34, 197, 94, 0.42);
+  border-radius: 8px;
+  background: rgba(20, 83, 45, 0.94);
+  color: #dcfce7;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  font-weight: 900;
+  padding: 13px 16px;
+}
+
+.admin-toast.tone-danger {
+  border-color: rgba(251, 113, 133, 0.42);
+  background: rgba(127, 29, 29, 0.94);
+  color: #ffe4e6;
 }
 
 .transition-summary {
@@ -1375,6 +1454,100 @@ p {
 .transition-summary span,
 .transition-summary time {
   color: var(--admin-text-muted);
+}
+
+.appointment-create-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  padding: 14px;
+}
+
+.appointment-create-summary div {
+  display: grid;
+  gap: 3px;
+}
+
+.appointment-create-summary span {
+  color: var(--admin-text-muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.appointment-create-summary strong {
+  color: var(--admin-text-main);
+}
+
+.appointment-create-summary small {
+  color: var(--admin-text-muted);
+  font-weight: 800;
+}
+
+.inactive-list {
+  display: grid;
+  gap: 10px;
+}
+
+.inactive-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  padding: 12px;
+}
+
+.inactive-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.inactive-row strong {
+  color: var(--admin-text-main);
+}
+
+.inactive-row span {
+  color: var(--admin-text-muted);
+  font-weight: 750;
+}
+
+.client-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.client-history-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  padding: 12px;
+}
+
+.client-history-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.client-history-row strong {
+  color: var(--admin-text-main);
+}
+
+.client-history-row span:not(.status-badge) {
+  color: var(--admin-text-muted);
+  font-weight: 750;
 }
 
 .catalog-table-head,
@@ -1811,6 +1984,23 @@ p {
   .week-switcher .admin-soft-button {
     grid-column: 1 / -1;
     width: 100%;
+  }
+
+  .appointment-create-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .inactive-row {
+    grid-template-columns: 1fr;
+  }
+
+  .inactive-row .admin-soft-button {
+    width: 100%;
+  }
+
+  .client-history-row {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .form-span-2 {

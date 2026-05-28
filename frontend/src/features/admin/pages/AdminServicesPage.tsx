@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatCurrency } from "../../../shared/utils/format";
+import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
 import {
   createService,
@@ -44,6 +48,9 @@ export function AdminServicesPage() {
   const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<number[]>(
     [],
   );
+  const [statusTarget, setStatusTarget] = useState<ServiceCatalogItem | null>(null);
+  const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const { showToast, toast } = useAdminToast();
 
   const servicesQuery = useQuery({
     queryKey: ["services"],
@@ -60,14 +67,13 @@ export function AdminServicesPage() {
   });
 
   const services = servicesQuery.data ?? [];
+  const activeServices = services.filter((service) => service.active);
+  const inactiveServices = services.filter((service) => !service.active);
   const professionals = professionalsQuery.data ?? [];
   const activeProfessionals = professionals.filter(
     (professional) => professional.active,
   );
-  const activeCount = useMemo(
-    () => services.filter((service) => service.active).length,
-    [services],
-  );
+  const activeCount = useMemo(() => activeServices.length, [activeServices.length]);
 
   const form = useForm<ServiceFormValues>({
     defaultValues: emptyValues,
@@ -97,9 +103,13 @@ export function AdminServicesPage() {
       return savedService;
     },
     onSuccess: async () => {
+      const message = editingService
+        ? "Servicio actualizado."
+        : "Servicio creado.";
       await queryClient.invalidateQueries({ queryKey: ["services"] });
       await queryClient.invalidateQueries({ queryKey: ["professionals"] });
       closeForm();
+      showToast(message);
     },
     onError: (error) => {
       setFormError(
@@ -113,7 +123,11 @@ export function AdminServicesPage() {
   const statusMutation = useMutation({
     mutationFn: ({ active, id }: { active: boolean; id: number }) =>
       setServiceActive(id, active),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["services"] }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["services"] });
+      setStatusTarget(null);
+      showToast(variables.active ? "Servicio reactivado." : "Servicio desactivado.");
+    },
   });
 
   function openCreateForm() {
@@ -171,6 +185,7 @@ export function AdminServicesPage() {
 
   return (
     <section className="catalog-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Catalogos</p>
@@ -189,7 +204,11 @@ export function AdminServicesPage() {
       <div className="catalog-summary-grid">
         <SummaryCard label="Servicios totales" value={services.length} />
         <SummaryCard label="Activos" value={activeCount} />
-        <SummaryCard label="Inactivos" value={services.length - activeCount} />
+        <SummaryCard
+          label="Inactivos"
+          value={inactiveServices.length}
+          onClick={() => setIsInactiveOpen(true)}
+        />
       </div>
 
       {isFormOpen ? (
@@ -334,11 +353,11 @@ export function AdminServicesPage() {
         ) : null}
         {!servicesQuery.isLoading &&
         !servicesQuery.isError &&
-        services.length === 0 ? (
-          <CatalogState label="Todavia no hay servicios cargados." />
+        activeServices.length === 0 ? (
+          <CatalogState label="No hay servicios activos cargados." />
         ) : null}
 
-        {services.length > 0 ? (
+        {activeServices.length > 0 ? (
           <div className="catalog-table" role="table" aria-label="Servicios">
             <div className="catalog-table-head" role="row">
               <span>Servicio</span>
@@ -347,7 +366,7 @@ export function AdminServicesPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {services.map((service) => (
+            {activeServices.map((service) => (
               <div className="catalog-row" role="row" key={service.id}>
                 <div className="catalog-main-cell">
                   <strong>{service.name}</strong>
@@ -375,12 +394,7 @@ export function AdminServicesPage() {
                     className="icon-button"
                     type="button"
                     disabled={statusMutation.isPending}
-                    onClick={() =>
-                      statusMutation.mutate({
-                        id: service.id,
-                        active: !service.active,
-                      })
-                    }
+                    onClick={() => setStatusTarget(service)}
                     aria-label={
                       service.active
                         ? `Desactivar ${service.name}`
@@ -399,11 +413,70 @@ export function AdminServicesPage() {
           </div>
         ) : null}
       </article>
+      {statusTarget ? (
+        <AdminConfirmDialog
+          title={statusTarget.active ? "Desactivar servicio" : "Reactivar servicio"}
+          message={
+            statusTarget.active
+              ? `El servicio ${statusTarget.name} no podra usarse para nuevos turnos mientras este inactivo. El historial no se borra.`
+              : `El servicio ${statusTarget.name} volvera a estar disponible segun sus profesionales asignados.`
+          }
+          confirmLabel={statusTarget.active ? "Desactivar" : "Reactivar"}
+          tone={statusTarget.active ? "danger" : "primary"}
+          isPending={statusMutation.isPending}
+          onCancel={() => setStatusTarget(null)}
+          onConfirm={() =>
+            statusMutation.mutate({
+              id: statusTarget.id,
+              active: !statusTarget.active,
+            })
+          }
+        />
+      ) : null}
+      {isInactiveOpen ? (
+        <AdminInactiveItemsModal
+          title="Servicios inactivos"
+          emptyLabel="No hay servicios inactivos."
+          items={inactiveServices.map((service) => ({
+            id: service.id,
+            title: service.name,
+            description: service.description || `${service.durationMinutes} min`,
+          }))}
+          onClose={() => setIsInactiveOpen(false)}
+          onReactivate={(id) => {
+            const service = inactiveServices.find((item) => item.id === id);
+            if (service) {
+              setStatusTarget(service);
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  onClick,
+  value,
+}: {
+  label: string;
+  onClick?: () => void;
+  value: number;
+}) {
+  if (onClick) {
+    return (
+      <button
+        className="admin-card catalog-summary-card is-action"
+        type="button"
+        onClick={onClick}
+      >
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </button>
+    );
+  }
+
   return (
     <article className="admin-card catalog-summary-card">
       <span>{label}</span>

@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff } from "lucide-react";
+import { Edit3, Plus, Power, PowerOff, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
+import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
+import { AdminToast } from "../components/AdminToast";
+import { useAdminToast } from "../hooks/useAdminToast";
 import {
   createBusinessHours,
   getBusinessHours,
@@ -39,6 +43,10 @@ export function AdminBusinessHoursPage() {
   const [editingItem, setEditingItem] = useState<BusinessHours | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusTarget, setStatusTarget] = useState<BusinessHours | null>(null);
+  const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState(0);
+  const { showToast, toast } = useAdminToast();
 
   const hoursQuery = useQuery({
     queryKey: ["business-hours"],
@@ -51,6 +59,18 @@ export function AdminBusinessHoursPage() {
 
   const hours = hoursQuery.data ?? [];
   const professionals = professionalsQuery.data ?? [];
+  const activeProfessionals = professionals.filter(
+    (professional) => professional.active,
+  );
+  const selectedProfessional = activeProfessionals.find(
+    (professional) => professional.id === selectedProfessionalId,
+  );
+  const hoursForSelectedProfessional =
+    selectedProfessionalId > 0
+      ? hours.filter((item) => item.professionalId === selectedProfessionalId)
+      : [];
+  const activeHours = hoursForSelectedProfessional.filter((item) => item.active);
+  const inactiveHours = hoursForSelectedProfessional.filter((item) => !item.active);
 
   const form = useForm<BusinessHoursFormValues>({
     defaultValues: {
@@ -67,8 +87,10 @@ export function AdminBusinessHoursPage() {
         ? updateBusinessHours(editingItem.id, payload)
         : createBusinessHours(payload),
     onSuccess: async () => {
+      const message = editingItem ? "Horario actualizado." : "Horario creado.";
       await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
       closeForm();
+      showToast(message);
     },
     onError: (error) =>
       setFormError(
@@ -81,15 +103,18 @@ export function AdminBusinessHoursPage() {
   const statusMutation = useMutation({
     mutationFn: ({ active, id }: { active: boolean; id: number }) =>
       setBusinessHoursActive(id, active),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["business-hours"] }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+      setStatusTarget(null);
+      showToast(variables.active ? "Horario reactivado." : "Horario desactivado.");
+    },
   });
 
   function openCreateForm() {
     setEditingItem(null);
     setFormError(null);
     form.reset({
-      professionalId: professionals[0]?.id ?? 0,
+      professionalId: selectedProfessionalId,
       dayOfWeek: "MONDAY",
       startTime: "09:00",
       endTime: "17:00",
@@ -127,6 +152,7 @@ export function AdminBusinessHoursPage() {
 
   return (
     <section className="catalog-page">
+      <AdminToast toast={toast} />
       <div className="catalog-header">
         <div>
           <p className="admin-kicker">Agenda</p>
@@ -137,12 +163,39 @@ export function AdminBusinessHoursPage() {
           className="admin-primary-button"
           type="button"
           onClick={openCreateForm}
-          disabled={professionals.length === 0}
+          disabled={selectedProfessionalId === 0}
         >
           <Plus aria-hidden="true" size={16} />
           Nuevo horario
         </button>
       </div>
+
+      <article className="admin-card calendar-toolbar">
+        <div className="calendar-filters">
+          <label>
+            Profesional
+            <select
+              value={selectedProfessionalId}
+              onChange={(event) => setSelectedProfessionalId(Number(event.target.value))}
+            >
+              <option value={0}>Seleccionar profesional</option>
+              {activeProfessionals.map((professional) => (
+                <option key={professional.id} value={professional.id}>
+                  {professional.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="admin-soft-button"
+            type="button"
+            onClick={() => setSelectedProfessionalId(0)}
+          >
+            <RotateCcw aria-hidden="true" size={16} />
+            Restablecer
+          </button>
+        </div>
+      </article>
 
       {isFormOpen ? (
         <AdminModal
@@ -209,23 +262,43 @@ export function AdminBusinessHoursPage() {
         </AdminModal>
       ) : null}
 
+      <div className="catalog-summary-grid">
+        <SummaryCard label="Horarios" value={hoursForSelectedProfessional.length} />
+        <SummaryCard label="Activos" value={activeHours.length} />
+        <SummaryCard
+          label="Inactivos"
+          value={inactiveHours.length}
+          onClick={() => setIsInactiveOpen(true)}
+        />
+      </div>
+
       <article className="admin-card catalog-list-card">
         <div className="card-heading">
           <div>
             <p className="admin-kicker">Listado</p>
-            <h3>Horarios cargados</h3>
+            <h3>
+              {selectedProfessional
+                ? `Horarios de ${selectedProfessional.fullName}`
+                : "Horarios por profesional"}
+            </h3>
           </div>
         </div>
 
+        {selectedProfessionalId === 0 ? (
+          <CatalogState label="Selecciona un profesional para ver sus horarios." />
+        ) : null}
         {hoursQuery.isLoading ? <CatalogState label="Cargando horarios..." /> : null}
         {hoursQuery.isError ? (
           <CatalogState label="No se pudieron cargar los horarios." />
         ) : null}
-        {!hoursQuery.isLoading && !hoursQuery.isError && hours.length === 0 ? (
-          <CatalogState label="Todavia no hay horarios cargados." />
+        {selectedProfessionalId > 0 &&
+        !hoursQuery.isLoading &&
+        !hoursQuery.isError &&
+        activeHours.length === 0 ? (
+          <CatalogState label="No hay horarios activos para este profesional." />
         ) : null}
 
-        {hours.length > 0 ? (
+        {activeHours.length > 0 ? (
           <div className="catalog-table business-hours-table">
             <div className="catalog-table-head">
               <span>Profesional</span>
@@ -234,7 +307,7 @@ export function AdminBusinessHoursPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {hours.map((item) => (
+            {activeHours.map((item) => (
               <div className="catalog-row" key={item.id}>
                 <div className="catalog-main-cell">
                   <strong>{item.professionalName}</strong>
@@ -252,15 +325,51 @@ export function AdminBusinessHoursPage() {
                   disabled={statusMutation.isPending}
                   label={item.professionalName}
                   onEdit={() => openEditForm(item)}
-                  onToggle={() =>
-                    statusMutation.mutate({ id: item.id, active: !item.active })
-                  }
+                  onToggle={() => setStatusTarget(item)}
                 />
               </div>
             ))}
           </div>
         ) : null}
       </article>
+      {statusTarget ? (
+        <AdminConfirmDialog
+          title={statusTarget.active ? "Desactivar horario" : "Reactivar horario"}
+          message={
+            statusTarget.active
+              ? `Este horario de ${statusTarget.professionalName} dejara de generar disponibilidad. Los turnos existentes no se borran.`
+              : `Este horario de ${statusTarget.professionalName} volvera a generar disponibilidad.`
+          }
+          confirmLabel={statusTarget.active ? "Desactivar" : "Reactivar"}
+          tone={statusTarget.active ? "danger" : "primary"}
+          isPending={statusMutation.isPending}
+          onCancel={() => setStatusTarget(null)}
+          onConfirm={() =>
+            statusMutation.mutate({
+              id: statusTarget.id,
+              active: !statusTarget.active,
+            })
+          }
+        />
+      ) : null}
+      {isInactiveOpen ? (
+        <AdminInactiveItemsModal
+          title="Horarios inactivos"
+          emptyLabel="No hay horarios inactivos."
+          items={inactiveHours.map((item) => ({
+            id: item.id,
+            title: item.professionalName,
+            description: `${dayLabels[item.dayOfWeek]} ${item.startTime.slice(0, 5)} - ${item.endTime.slice(0, 5)}`,
+          }))}
+          onClose={() => setIsInactiveOpen(false)}
+          onReactivate={(id) => {
+            const item = inactiveHours.find((hour) => hour.id === id);
+            if (item) {
+              setStatusTarget(item);
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -293,6 +402,36 @@ function CatalogActions({
         {active ? <PowerOff aria-hidden="true" size={16} /> : <Power aria-hidden="true" size={16} />}
       </button>
     </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  onClick,
+  value,
+}: {
+  label: string;
+  onClick?: () => void;
+  value: number;
+}) {
+  if (onClick) {
+    return (
+      <button
+        className="admin-card catalog-summary-card is-action"
+        type="button"
+        onClick={onClick}
+      >
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </button>
+    );
+  }
+
+  return (
+    <article className="admin-card catalog-summary-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </article>
   );
 }
 

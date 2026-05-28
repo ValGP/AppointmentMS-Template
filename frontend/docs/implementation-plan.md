@@ -648,21 +648,25 @@ Principios:
 
 #### Fase 4.3.1 - Confirmaciones y feedback global
 
+Estado:
+
+- Cerrada. Hay modal reutilizable de confirmacion y toast/banner temporal para acciones exitosas.
+
 Alcance:
 
-- Crear un modal reutilizable de confirmacion para acciones sensibles.
-- Crear un sistema simple de toast/banner de exito.
+- Crear un modal reutilizable de confirmacion para acciones sensibles. Implementado.
+- Crear un sistema simple de toast/banner de exito. Implementado.
 - Aplicar confirmacion a:
-  - confirmar turno.
-  - rechazar turno.
-  - cancelar turno.
-  - completar turno.
-  - marcar no-show.
-  - desactivar/reactivar servicio.
-  - desactivar/reactivar profesional.
-  - desactivar/reactivar cliente.
-  - desactivar/reactivar horario.
-  - desactivar/reactivar bloqueo.
+  - confirmar turno. Implementado.
+  - rechazar turno. Implementado.
+  - cancelar turno. Implementado.
+  - completar turno. Implementado.
+  - marcar no-show. Implementado.
+  - desactivar/reactivar servicio. Implementado.
+  - desactivar/reactivar profesional. Implementado.
+  - desactivar/reactivar cliente. Implementado.
+  - desactivar/reactivar horario. Implementado.
+  - desactivar/reactivar bloqueo. Implementado.
 - Mostrar feedback despues de acciones importantes, por ejemplo:
   - `Turno confirmado`.
   - `Servicio desactivado`.
@@ -676,20 +680,24 @@ Salida esperada:
 
 #### Fase 4.3.2 - Agenda mas clara y filtros restablecibles
 
+Estado:
+
+- Cerrada. Agenda ahora prioriza servicio, despues profesional compatible, permite restablecer filtros dejando la agenda sin seleccion y muestra resumen completo antes de crear turno.
+
 Alcance:
 
-- Reordenar filtros de Agenda para ir primero por `Servicio` y despues `Profesional`.
-- Mantener el filtrado compatible: al elegir servicio, se muestran solo profesionales compatibles.
+- Reordenar filtros de Agenda para ir primero por `Servicio` y despues `Profesional`. Implementado.
+- Mantener el filtrado compatible: al elegir servicio, se muestran solo profesionales compatibles. Implementado.
 - Agregar accion `Restablecer filtros` o equivalente:
-  - vuelve a la semana actual.
-  - vuelve al primer servicio activo disponible.
-  - vuelve al primer profesional compatible con ese servicio.
+  - vuelve a la semana actual. Implementado.
+  - deja servicio sin seleccionar. Implementado.
+  - deja profesional sin seleccionar. Implementado.
 - Agregar estados vacios mas explicitos:
-  - no hay profesionales compatibles con este servicio.
-  - no hay servicios activos.
-  - no hay horarios cargados para este profesional.
-  - no hay disponibilidad por bloqueos o turnos ocupados.
-- En el modal de crear turno desde Agenda, mostrar un resumen superior antes de guardar:
+  - no hay profesionales compatibles con este servicio. Implementado.
+  - no hay servicios activos. Implementado.
+  - no hay horarios cargados para este profesional. Implementado como mensaje operativo de horarios/disponibilidad.
+  - no hay disponibilidad por bloqueos o turnos ocupados. Implementado como mensaje operativo de disponibilidad semanal.
+- En el modal de crear turno desde Agenda, mostrar un resumen superior antes de guardar. Implementado:
   - cliente seleccionado.
   - profesional.
   - servicio.
@@ -702,18 +710,22 @@ Salida esperada:
 
 #### Fase 4.3.3 - Activos e inactivos en catalogos
 
+Estado:
+
+- Cerrada. Los listados principales muestran activos por defecto y los inactivos se consultan desde modal con reactivacion confirmada.
+
 Alcance:
 
-- En pantallas con entidades desactivables, el listado principal debe mostrar activos por defecto.
+- En pantallas con entidades desactivables, el listado principal debe mostrar activos por defecto. Implementado.
 - Agregar un boton o accion secundaria para ver inactivos:
-  - servicios inactivos.
-  - profesionales inactivos.
-  - clientes inactivos.
-  - horarios inactivos.
-  - bloqueos inactivos.
-- La vista de inactivos puede abrirse como modal.
-- Desde ese modal se puede reactivar, siempre con confirmacion.
-- Mantener conteos o indicadores para que el admin sepa que existen elementos inactivos sin ensuciar la vista principal.
+  - servicios inactivos. Implementado.
+  - profesionales inactivos. Implementado.
+  - clientes inactivos. Implementado.
+  - horarios inactivos. Implementado.
+  - bloqueos inactivos. Implementado.
+- La vista de inactivos puede abrirse como modal. Implementado.
+- Desde ese modal se puede reactivar, siempre con confirmacion. Implementado.
+- Mantener conteos o indicadores para que el admin sepa que existen elementos inactivos sin ensuciar la vista principal. Implementado.
 
 Salida esperada:
 
@@ -722,13 +734,17 @@ Salida esperada:
 
 #### Fase 4.3.4 - Horarios por profesional
 
+Estado:
+
+- Cerrada. Horarios ahora se navega por profesional, y el alta toma el profesional seleccionado.
+
 Alcance:
 
-- Reorganizar la seccion Horarios para elegir primero un profesional.
-- Mostrar en la lista solo los horarios del profesional seleccionado.
-- El boton `Nuevo horario` debe abrir el modal con ese profesional preseleccionado.
-- Mantener posibilidad de cambiar profesional dentro del modal si hace falta.
-- Agregar restablecer filtro o selector claro cuando no haya profesional cargado.
+- Reorganizar la seccion Horarios para elegir primero un profesional. Implementado.
+- Mostrar en la lista solo los horarios del profesional seleccionado. Implementado.
+- El boton `Nuevo horario` debe abrir el modal con ese profesional preseleccionado. Implementado.
+- Mantener posibilidad de cambiar profesional dentro del modal si hace falta. Implementado.
+- Agregar restablecer filtro o selector claro cuando no haya profesional cargado. Implementado.
 
 Salida esperada:
 
@@ -736,17 +752,21 @@ Salida esperada:
 
 #### Fase 4.3.5 - Historial de turnos desde Clientes
 
+Estado:
+
+- Cerrada. Clientes permite abrir un historial de turnos filtrado por cliente desde la lista.
+
 Alcance:
 
-- En la lista de clientes, agregar accion para ver historial de turnos.
-- Abrir un modal o vista secundaria con turnos del cliente.
+- En la lista de clientes, agregar accion para ver historial de turnos. Implementado.
+- Abrir un modal o vista secundaria con turnos del cliente. Implementado como modal.
 - Mostrar datos minimos:
-  - fecha y hora.
-  - servicio.
-  - profesional.
-  - estado.
-  - notas si existen.
-- Reutilizar `GET /api/appointments` con filtro `clientId` si alcanza para el MVP.
+  - fecha y hora. Implementado.
+  - servicio. Implementado.
+  - profesional. Implementado.
+  - estado. Implementado.
+  - notas si existen. Implementado.
+- Reutilizar `GET /api/appointments` con filtro `clientId` si alcanza para el MVP. Implementado.
 
 Salida esperada:
 
