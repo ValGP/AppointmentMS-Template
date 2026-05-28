@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff, X } from "lucide-react";
+import { Edit3, Plus, Power, PowerOff } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatShortDateTime } from "../../../shared/utils/date";
+import { AdminModal } from "../components/AdminModal";
 import {
   createAvailabilityBlock,
   getAvailabilityBlocks,
@@ -51,7 +52,7 @@ export function AdminAvailabilityBlocksPage() {
   });
   const professionalsQuery = useQuery({
     queryKey: ["professionals"],
-    queryFn: getProfessionals,
+    queryFn: () => getProfessionals(),
   });
 
   const blocks = blocksQuery.data ?? [];
@@ -154,17 +155,11 @@ export function AdminAvailabilityBlocksPage() {
       </div>
 
       {isFormOpen ? (
-        <article className="admin-card catalog-form-card">
-          <div className="card-heading">
-            <div>
-              <p className="admin-kicker">{editingItem ? "Editar" : "Crear"}</p>
-              <h3>{editingItem ? "Editar bloqueo" : "Nuevo bloqueo"}</h3>
-            </div>
-            <button className="icon-button" type="button" onClick={closeForm} aria-label="Cerrar formulario">
-              <X aria-hidden="true" size={18} />
-            </button>
-          </div>
-
+        <AdminModal
+          kicker={editingItem ? "Editar" : "Crear"}
+          title={editingItem ? "Editar bloqueo" : "Nuevo bloqueo"}
+          onClose={closeForm}
+        >
           <form className="admin-form-grid" onSubmit={form.handleSubmit(onSubmit)}>
             <label>
               Profesional
@@ -243,7 +238,7 @@ export function AdminAvailabilityBlocksPage() {
               </button>
             </div>
           </form>
-        </article>
+        </AdminModal>
       ) : null}
 
       <article className="admin-card catalog-list-card">

@@ -7,6 +7,7 @@ import com.turnos.api.common.ConflictException;
 import com.turnos.api.common.ResourceNotFoundException;
 import com.turnos.api.professionals.Professional;
 import com.turnos.api.professionals.ProfessionalRepository;
+import com.turnos.api.professionals.ProfessionalServiceAssignmentService;
 import com.turnos.api.services.ServiceRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,19 +30,22 @@ public class AvailabilityService {
     private final BusinessHoursRepository businessHoursRepository;
     private final AppointmentRepository appointmentRepository;
     private final AvailabilityBlockRepository availabilityBlockRepository;
+    private final ProfessionalServiceAssignmentService professionalServiceAssignmentService;
 
     public AvailabilityService(
             ProfessionalRepository professionalRepository,
             ServiceRepository serviceRepository,
             BusinessHoursRepository businessHoursRepository,
             AppointmentRepository appointmentRepository,
-            AvailabilityBlockRepository availabilityBlockRepository
+            AvailabilityBlockRepository availabilityBlockRepository,
+            ProfessionalServiceAssignmentService professionalServiceAssignmentService
     ) {
         this.professionalRepository = professionalRepository;
         this.serviceRepository = serviceRepository;
         this.businessHoursRepository = businessHoursRepository;
         this.appointmentRepository = appointmentRepository;
         this.availabilityBlockRepository = availabilityBlockRepository;
+        this.professionalServiceAssignmentService = professionalServiceAssignmentService;
     }
 
     @Transactional(readOnly = true)
@@ -56,6 +60,9 @@ public class AvailabilityService {
         }
         if (!service.canBeBooked()) {
             throw new ConflictException("Service must be active and have valid duration");
+        }
+        if (!professionalServiceAssignmentService.canProfessionalProvideService(professionalId, serviceId)) {
+            return List.of();
         }
 
         LocalDateTime dayStart = date.atStartOfDay();

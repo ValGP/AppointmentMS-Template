@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Clock3,
   Edit3,
-  Plus,
   RefreshCw,
   Search,
   UserX,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { type ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
 import { ApiError } from "../../../shared/api/httpClient";
 import {
   addDays,
@@ -29,17 +28,14 @@ import {
   cancelAppointmentByAdmin,
   completeAppointment,
   confirmAppointment,
-  createAppointment,
   getAppointments,
   markAppointmentNoShow,
   rejectAppointment,
   type Appointment,
-  type AppointmentPayload,
   type AppointmentStatus,
 } from "../../appointments/api/appointmentsApi";
 import { getClients } from "../../clients/api/clientsApi";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
-import { getServices } from "../../services/api/servicesApi";
 
 const statusOptions: Array<{ label: string; value: AppointmentStatus }> = [
   { label: "Pendiente", value: "PENDING" },
@@ -63,14 +59,6 @@ const statusTone: Record<AppointmentStatus, string> = {
   CANCELED_BY_ADMIN: "muted",
   COMPLETED: "success",
   NO_SHOW: "danger",
-};
-
-type AppointmentFormValues = {
-  clientId: number;
-  professionalId: number;
-  serviceId: number;
-  startDateTime: string;
-  notes: string;
 };
 
 type Filters = {
@@ -120,8 +108,6 @@ export function AdminAppointmentsPage() {
     from: toDateInput(initialStart),
     to: toDateInput(initialEnd),
   });
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [transition, setTransition] = useState<{
     action: TransitionAction;
     appointment: Appointment;
@@ -149,19 +135,12 @@ export function AdminAppointmentsPage() {
   const clientsQuery = useQuery({ queryKey: ["clients"], queryFn: getClients });
   const professionalsQuery = useQuery({
     queryKey: ["professionals"],
-    queryFn: getProfessionals,
+    queryFn: () => getProfessionals(),
   });
-  const servicesQuery = useQuery({ queryKey: ["services"], queryFn: getServices });
 
   const appointments = appointmentsQuery.data?.content ?? [];
   const clients = clientsQuery.data ?? [];
   const professionals = professionalsQuery.data ?? [];
-  const services = servicesQuery.data ?? [];
-  const activeClients = clients.filter((client) => client.active);
-  const activeProfessionals = professionals.filter(
-    (professional) => professional.active,
-  );
-  const activeServices = services.filter((service) => service.active);
 
   const groupedAppointments = useMemo(() => {
     return appointments.reduce<Record<string, Appointment[]>>((acc, appointment) => {
@@ -171,31 +150,6 @@ export function AdminAppointmentsPage() {
       return acc;
     }, {});
   }, [appointments]);
-
-  const createForm = useForm<AppointmentFormValues>({
-    defaultValues: {
-      clientId: 0,
-      professionalId: 0,
-      serviceId: 0,
-      startDateTime: "",
-      notes: "",
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (payload: AppointmentPayload) => createAppointment(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["admin-dashboard-appointments"],
-      });
-      closeCreateModal();
-    },
-    onError: (error) =>
-      setFormError(
-        error instanceof ApiError ? error.message : "No se pudo crear el turno.",
-      ),
-  });
 
   const simpleActionMutation = useMutation({
     mutationFn: ({
@@ -264,35 +218,6 @@ export function AdminAppointmentsPage() {
     setPage(0);
   }
 
-  function openCreateModal() {
-    setFormError(null);
-    createForm.reset({
-      clientId: activeClients[0]?.id ?? 0,
-      professionalId: activeProfessionals[0]?.id ?? 0,
-      serviceId: activeServices[0]?.id ?? 0,
-      startDateTime: "",
-      notes: "",
-    });
-    setIsCreateOpen(true);
-  }
-
-  function closeCreateModal() {
-    setFormError(null);
-    setIsCreateOpen(false);
-    createForm.reset();
-  }
-
-  function onCreateSubmit(values: AppointmentFormValues) {
-    setFormError(null);
-    createMutation.mutate({
-      clientId: Number(values.clientId),
-      professionalId: Number(values.professionalId),
-      serviceId: Number(values.serviceId),
-      startDateTime: values.startDateTime,
-      notes: values.notes.trim() || undefined,
-    });
-  }
-
   function openTransitionModal(action: TransitionAction, appointment: Appointment) {
     setTransition({ action, appointment });
     setTransitionReason("");
@@ -336,19 +261,12 @@ export function AdminAppointmentsPage() {
             acciones de estado.
           </p>
         </div>
-        <button
+        <Link
           className="admin-primary-button"
-          type="button"
-          onClick={openCreateModal}
-          disabled={
-            activeClients.length === 0 ||
-            activeProfessionals.length === 0 ||
-            activeServices.length === 0
-          }
+          to="/admin/calendar"
         >
-          <Plus aria-hidden="true" size={16} />
-          Nuevo turno
-        </button>
+          Revisar agenda
+        </Link>
       </div>
 
       <article className="admin-card appointments-filter-card">
@@ -521,120 +439,6 @@ export function AdminAppointmentsPage() {
           </div>
         ) : null}
       </article>
-
-      {isCreateOpen ? (
-        <Modal title="Nuevo turno" kicker="Agenda" onClose={closeCreateModal}>
-          <form
-            className="admin-form-grid"
-            onSubmit={createForm.handleSubmit(onCreateSubmit)}
-          >
-            <label>
-              Cliente
-              <select
-                {...createForm.register("clientId", {
-                  required: "Selecciona un cliente.",
-                  valueAsNumber: true,
-                  min: { value: 1, message: "Selecciona un cliente." },
-                })}
-              >
-                <option value={0}>Seleccionar</option>
-                {activeClients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.fullName}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={createForm.formState.errors.clientId?.message} />
-            </label>
-
-            <label>
-              Profesional
-              <select
-                {...createForm.register("professionalId", {
-                  required: "Selecciona un profesional.",
-                  valueAsNumber: true,
-                  min: { value: 1, message: "Selecciona un profesional." },
-                })}
-              >
-                <option value={0}>Seleccionar</option>
-                {activeProfessionals.map((professional) => (
-                  <option key={professional.id} value={professional.id}>
-                    {professional.fullName}
-                  </option>
-                ))}
-              </select>
-              <FieldError
-                message={createForm.formState.errors.professionalId?.message}
-              />
-            </label>
-
-            <label>
-              Servicio
-              <select
-                {...createForm.register("serviceId", {
-                  required: "Selecciona un servicio.",
-                  valueAsNumber: true,
-                  min: { value: 1, message: "Selecciona un servicio." },
-                })}
-              >
-                <option value={0}>Seleccionar</option>
-                {activeServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={createForm.formState.errors.serviceId?.message} />
-            </label>
-
-            <label>
-              Fecha y hora
-              <input
-                type="datetime-local"
-                {...createForm.register("startDateTime", {
-                  required: "Ingresa fecha y hora.",
-                })}
-              />
-              <FieldError
-                message={createForm.formState.errors.startDateTime?.message}
-              />
-            </label>
-
-            <label className="form-span-2">
-              Notas
-              <textarea
-                rows={3}
-                {...createForm.register("notes", {
-                  maxLength: {
-                    value: 500,
-                    message: "Maximo 500 caracteres.",
-                  },
-                })}
-              />
-              <FieldError message={createForm.formState.errors.notes?.message} />
-            </label>
-
-            {formError ? <div className="admin-form-error">{formError}</div> : null}
-
-            <div className="form-actions">
-              <button
-                className="admin-soft-button"
-                type="button"
-                onClick={closeCreateModal}
-              >
-                Cancelar
-              </button>
-              <button
-                className="admin-primary-button"
-                type="submit"
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? "Creando..." : "Crear turno"}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      ) : null}
 
       {transition ? (
         <Modal
@@ -838,8 +642,4 @@ function DashboardState({ label }: { label: string }) {
       <span>{label}</span>
     </div>
   );
-}
-
-function FieldError({ message }: { message?: string }) {
-  return message ? <span className="field-error">{message}</span> : null;
 }

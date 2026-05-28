@@ -6,6 +6,8 @@ import com.turnos.api.appointments.Appointment;
 import com.turnos.api.appointments.AppointmentRepository;
 import com.turnos.api.professionals.Professional;
 import com.turnos.api.professionals.ProfessionalRepository;
+import com.turnos.api.professionals.ProfessionalServiceAssignment;
+import com.turnos.api.professionals.ProfessionalServiceRepository;
 import com.turnos.api.services.Service;
 import com.turnos.api.services.ServiceRepository;
 import com.turnos.api.users.User;
@@ -45,6 +47,9 @@ class AvailabilityControllerTest {
 
     @Autowired
     private ProfessionalRepository professionalRepository;
+
+    @Autowired
+    private ProfessionalServiceRepository professionalServiceRepository;
 
     @Autowired
     private ServiceRepository serviceRepository;
@@ -174,6 +179,53 @@ class AvailabilityControllerTest {
                         .param("professionalId", fixture.professional().getId().toString())
                         .param("serviceId", fixture.service().getId().toString())
                         .param("date", "2027-05-25"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void allServicesProfessionalReturnsAvailability() throws Exception {
+        Fixture fixture = fixture("availability-all-services", 60);
+        String token = registerClient("availability.all.services.viewer@email.com");
+
+        mockMvc.perform(get("/api/availability")
+                        .header("Authorization", "Bearer " + token)
+                        .param("professionalId", fixture.professional().getId().toString())
+                        .param("serviceId", fixture.service().getId().toString())
+                        .param("date", "2027-05-24"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty());
+    }
+
+    @Test
+    void selectedServicesProfessionalReturnsAvailabilityForAssignedService() throws Exception {
+        Fixture fixture = fixture("availability-selected-assigned", 60);
+        String token = registerClient("availability.selected.assigned.viewer@email.com");
+        fixture.professional().setSelectedServices();
+        professionalRepository.save(fixture.professional());
+        professionalServiceRepository.save(new ProfessionalServiceAssignment(fixture.professional(), fixture.service()));
+
+        mockMvc.perform(get("/api/availability")
+                        .header("Authorization", "Bearer " + token)
+                        .param("professionalId", fixture.professional().getId().toString())
+                        .param("serviceId", fixture.service().getId().toString())
+                        .param("date", "2027-05-24"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isNotEmpty());
+    }
+
+    @Test
+    void selectedServicesProfessionalReturnsEmptyAvailabilityForUnassignedService() throws Exception {
+        Fixture fixture = fixture("availability-selected-unassigned", 60);
+        String token = registerClient("availability.selected.unassigned.viewer@email.com");
+        fixture.professional().setSelectedServices();
+        professionalRepository.save(fixture.professional());
+
+        mockMvc.perform(get("/api/availability")
+                        .header("Authorization", "Bearer " + token)
+                        .param("professionalId", fixture.professional().getId().toString())
+                        .param("serviceId", fixture.service().getId().toString())
+                        .param("date", "2027-05-24"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
     }

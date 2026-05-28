@@ -101,7 +101,7 @@ export function AdminDashboardPage() {
             <RefreshCw aria-hidden="true" size={16} />
             Actualizar
           </button>
-          <Link className="admin-primary-button" to="/admin/appointments">
+          <Link className="admin-primary-button" to="/admin/calendar">
             <Plus aria-hidden="true" size={16} />
             Nuevo turno
           </Link>
@@ -204,9 +204,9 @@ export function AdminDashboardPage() {
                 <h3>Rapidas</h3>
               </div>
             </div>
-            <Link className="quick-action" to="/admin/appointments">
+            <Link className="quick-action" to="/admin/calendar">
               <Plus aria-hidden="true" size={16} />
-              Crear turno manual
+              Crear desde agenda
             </Link>
             <Link className="quick-action" to="/admin/clients">
               <UserPlus aria-hidden="true" size={16} />

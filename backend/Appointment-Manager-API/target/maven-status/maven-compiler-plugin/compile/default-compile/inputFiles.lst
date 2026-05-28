@@ -63,6 +63,16 @@ C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalRequest.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalResponse.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalService.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalServiceAssignment.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalServiceAssignmentService.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalServiceId.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalServiceRepository.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalServicesAssignmentRequest.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ProfessionalServicesAssignmentResponse.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ServiceAssignmentMode.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ServiceProfessionalAssignmentMode.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ServiceProfessionalsAssignmentRequest.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\professionals\ServiceProfessionalsAssignmentResponse.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\package-info.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\Service.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCatalogService.java

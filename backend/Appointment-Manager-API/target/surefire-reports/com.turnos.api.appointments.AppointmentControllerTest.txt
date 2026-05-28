@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.turnos.api.appointments.AppointmentControllerTest
 -------------------------------------------------------------------------------
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.522 s -- in com.turnos.api.appointments.AppointmentControllerTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.390 s -- in com.turnos.api.appointments.AppointmentControllerTest

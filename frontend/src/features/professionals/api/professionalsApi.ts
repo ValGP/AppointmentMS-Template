@@ -14,8 +14,36 @@ export type ProfessionalPayload = {
   phone?: string;
 };
 
-export function getProfessionals() {
-  return apiRequest<Professional[]>("/api/professionals");
+export type ProfessionalSearchParams = {
+  serviceId?: number;
+};
+
+export type ServiceAssignmentMode = "ALL_SERVICES" | "SELECTED_SERVICES";
+
+export type ProfessionalServicesAssignment = {
+  professionalId: number;
+  mode: ServiceAssignmentMode;
+  services: Array<{
+    id: number;
+    name: string;
+    active: boolean;
+  }>;
+};
+
+export type ProfessionalServicesAssignmentPayload = {
+  mode: ServiceAssignmentMode;
+  serviceIds: number[];
+};
+
+export function getProfessionals(params: ProfessionalSearchParams = {}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.serviceId !== undefined) {
+    searchParams.set("serviceId", String(params.serviceId));
+  }
+
+  const query = searchParams.toString();
+  return apiRequest<Professional[]>(`/api/professionals${query ? `?${query}` : ""}`);
 }
 
 export function createProfessional(payload: ProfessionalPayload) {
@@ -37,6 +65,25 @@ export function setProfessionalActive(id: number, active: boolean) {
     `/api/professionals/${id}/${active ? "activate" : "deactivate"}`,
     {
       method: "PATCH",
+    },
+  );
+}
+
+export function getProfessionalServicesAssignment(id: number) {
+  return apiRequest<ProfessionalServicesAssignment>(
+    `/api/professionals/${id}/services`,
+  );
+}
+
+export function updateProfessionalServicesAssignment(
+  id: number,
+  payload: ProfessionalServicesAssignmentPayload,
+) {
+  return apiRequest<ProfessionalServicesAssignment>(
+    `/api/professionals/${id}/services`,
+    {
+      method: "PUT",
+      body: payload,
     },
   );
 }

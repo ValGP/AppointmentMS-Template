@@ -9,6 +9,8 @@ import com.turnos.api.availability.BusinessHoursRepository;
 import com.turnos.api.notifications.NotificationService;
 import com.turnos.api.professionals.Professional;
 import com.turnos.api.professionals.ProfessionalRepository;
+import com.turnos.api.professionals.ProfessionalServiceAssignment;
+import com.turnos.api.professionals.ProfessionalServiceRepository;
 import com.turnos.api.services.Service;
 import com.turnos.api.services.ServiceRepository;
 import com.turnos.api.users.User;
@@ -50,6 +52,9 @@ class AppointmentControllerTest {
 
     @Autowired
     private ProfessionalRepository professionalRepository;
+
+    @Autowired
+    private ProfessionalServiceRepository professionalServiceRepository;
 
     @Autowired
     private ServiceRepository serviceRepository;
@@ -182,6 +187,72 @@ class AppointmentControllerTest {
                                 }
                                 """.formatted(fixture.professional().getId(), fixture.service().getId())))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void clientCanCreateAppointmentWhenSelectedServiceIsAssigned() throws Exception {
+        Fixture fixture = fixture("client-compatible");
+        String clientToken = registerClient("client.compatible@email.com");
+        fixture.professional().setSelectedServices();
+        professionalRepository.save(fixture.professional());
+        professionalServiceRepository.save(new ProfessionalServiceAssignment(fixture.professional(), fixture.service()));
+
+        mockMvc.perform(post("/api/appointments")
+                        .header("Authorization", "Bearer " + clientToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "professionalId": %d,
+                                  "serviceId": %d,
+                                  "startDateTime": "2027-05-24T10:00:00"
+                                }
+                                """.formatted(fixture.professional().getId(), fixture.service().getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void clientCannotCreateAppointmentWhenSelectedServiceIsNotAssigned() throws Exception {
+        Fixture fixture = fixture("client-incompatible");
+        String clientToken = registerClient("client.incompatible@email.com");
+        fixture.professional().setSelectedServices();
+        professionalRepository.save(fixture.professional());
+
+        mockMvc.perform(post("/api/appointments")
+                        .header("Authorization", "Bearer " + clientToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "professionalId": %d,
+                                  "serviceId": %d,
+                                  "startDateTime": "2027-05-24T10:00:00"
+                                }
+                                """.formatted(fixture.professional().getId(), fixture.service().getId())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Professional does not provide the selected service"));
+    }
+
+    @Test
+    void adminCannotCreateAppointmentWhenSelectedServiceIsNotAssigned() throws Exception {
+        Fixture fixture = fixture("admin-incompatible");
+        User client = createClient("admin.incompatible.client@email.com");
+        String adminToken = login("admin@turnos.local", "admin1234");
+        fixture.professional().setSelectedServices();
+        professionalRepository.save(fixture.professional());
+
+        mockMvc.perform(post("/api/appointments")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "clientId": %d,
+                                  "professionalId": %d,
+                                  "serviceId": %d,
+                                  "startDateTime": "2027-05-24T10:00:00"
+                                }
+                                """.formatted(client.getId(), fixture.professional().getId(), fixture.service().getId())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Professional does not provide the selected service"));
     }
 
     @Test

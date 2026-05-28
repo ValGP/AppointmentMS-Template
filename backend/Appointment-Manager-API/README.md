@@ -168,6 +168,59 @@ Content-Type: application/json
 }
 ```
 
+Limit a professional to selected services:
+
+```http
+PUT /api/professionals/1/services
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "mode": "SELECTED_SERVICES",
+  "serviceIds": [1, 2]
+}
+```
+
+Restore a professional to all services:
+
+```http
+PUT /api/professionals/1/services
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "mode": "ALL_SERVICES",
+  "serviceIds": []
+}
+```
+
+Limit a service to selected professionals:
+
+```http
+PUT /api/services/1/professionals
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "mode": "SELECTED_PROFESSIONALS",
+  "professionalIds": [1, 3]
+}
+```
+
+Filter compatible catalog options:
+
+```http
+GET /api/professionals?serviceId=1
+GET /api/services?professionalId=1
+Authorization: Bearer <admin-token>
+```
+
 Create business hours:
 
 ```http
@@ -445,6 +498,78 @@ Paginated response shape:
 }
 ```
 
+Update 1.1 added professional-service assignments:
+
+- Professionals use `serviceAssignmentMode` with `ALL_SERVICES` as the default.
+- `ALL_SERVICES` means no manual service rows are required.
+- `SELECTED_SERVICES` limits a professional to rows stored in `professional_services`.
+- Admins can assign services from the professional side or professionals from the service side.
+- Appointment creation rejects incompatible `professionalId` + `serviceId` combinations with `409 Conflict`.
+- Availability returns an empty list for incompatible combinations, while missing IDs and inactive catalog records still return their normal errors.
+- `GET /api/professionals?serviceId=...` and `GET /api/services?professionalId=...` expose compatible options for admin screens and the future client booking flow.
+
+Professional-service assignment endpoints:
+
+```http
+GET /api/professionals/{id}/services
+PUT /api/professionals/{id}/services
+GET /api/services/{id}/professionals
+PUT /api/services/{id}/professionals
+GET /api/professionals?serviceId={serviceId}
+GET /api/services?professionalId={professionalId}
+```
+
+Professional assignment request:
+
+```json
+{
+  "mode": "SELECTED_SERVICES",
+  "serviceIds": [1, 2]
+}
+```
+
+Professional assignment response:
+
+```json
+{
+  "professionalId": 1,
+  "mode": "SELECTED_SERVICES",
+  "services": [
+    {
+      "id": 1,
+      "name": "General Consultation",
+      "active": true
+    }
+  ]
+}
+```
+
+Service assignment request:
+
+```json
+{
+  "mode": "SELECTED_PROFESSIONALS",
+  "professionalIds": [1, 3]
+}
+```
+
+Service assignment response:
+
+```json
+{
+  "serviceId": 1,
+  "mode": "SELECTED_PROFESSIONALS",
+  "professionals": [
+    {
+      "id": 1,
+      "fullName": "Demo Professional",
+      "active": true,
+      "serviceAssignmentMode": "SELECTED_SERVICES"
+    }
+  ]
+}
+```
+
 Phase 8 prepared notification extension points:
 
 - `NotificationService` defines appointment notification events.
@@ -476,11 +601,15 @@ Future reminder scheduling can be added with a scheduled job that finds confirme
 3. Open Swagger UI at <http://localhost:8080/swagger-ui.html>.
 4. Log in as admin and authorize Swagger with `Bearer <token>`.
 5. Create or verify service, professional, and business hours.
-6. Query availability for a working day.
-7. Register or log in as a client.
-8. Create a client appointment and verify it starts as `PENDING`.
-9. Confirm the appointment as admin.
-10. Try an invalid transition and verify the API returns a conflict error.
-11. Query appointment history with filters and pagination.
-12. Run `.\mvnw.cmd test`.
-13. Run the Postman collection for the automated smoke flow.
+6. Limit the professional to one service with `PUT /api/professionals/{id}/services`.
+7. Query availability for an enabled professional-service combination.
+8. Query availability for a disabled combination and verify it returns `[]`.
+9. Try to create an appointment for the disabled combination and verify the API returns `409 Conflict`.
+10. Restore the professional to all services with `mode = ALL_SERVICES`.
+11. Register or log in as a client.
+12. Create a client appointment and verify it starts as `PENDING`.
+13. Confirm the appointment as admin.
+14. Try an invalid transition and verify the API returns a conflict error.
+15. Query appointment history with filters and pagination.
+16. Run `.\mvnw.cmd test`.
+17. Run the Postman collection for the automated smoke flow.

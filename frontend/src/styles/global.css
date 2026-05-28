@@ -1021,6 +1021,75 @@ p {
   gap: 10px;
 }
 
+.assignment-panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel-2);
+  padding: 14px;
+}
+
+.assignment-panel strong {
+  color: var(--admin-text-main);
+}
+
+.assignment-hint {
+  margin: 0;
+  color: var(--admin-text-muted);
+  line-height: 1.5;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  width: min(360px, 100%);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-bg);
+  padding: 4px;
+}
+
+.segmented-control button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--admin-text-muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.segmented-control button.active {
+  background: var(--admin-brand);
+  color: #fff;
+}
+
+.assignment-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.assignment-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel);
+  color: var(--admin-text-main);
+  padding: 10px 12px;
+}
+
+.assignment-checklist input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--admin-brand);
+}
+
 .catalog-table {
   display: grid;
   gap: 8px;
@@ -1778,6 +1847,14 @@ p {
   }
 
   .form-actions button {
+    width: 100%;
+  }
+
+  .assignment-checklist {
+    grid-template-columns: 1fr;
+  }
+
+  .segmented-control {
     width: 100%;
   }
 

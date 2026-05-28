@@ -1,15 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Edit3, Plus, Power, PowerOff } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatCurrency } from "../../../shared/utils/format";
+import { AdminModal } from "../components/AdminModal";
+import { getProfessionals } from "../../professionals/api/professionalsApi";
 import {
   createService,
+  getServiceProfessionalsAssignment,
   getServices,
   setServiceActive,
   updateService,
+  updateServiceProfessionalsAssignment,
   type ServiceCatalogItem,
+  type ServiceProfessionalAssignmentMode,
   type ServicePayload,
 } from "../../services/api/servicesApi";
 
@@ -34,13 +39,31 @@ export function AdminServicesPage() {
   );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [assignmentMode, setAssignmentMode] =
+    useState<ServiceProfessionalAssignmentMode>("ALL_PROFESSIONALS");
+  const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<number[]>(
+    [],
+  );
 
   const servicesQuery = useQuery({
     queryKey: ["services"],
-    queryFn: getServices,
+    queryFn: () => getServices(),
+  });
+  const professionalsQuery = useQuery({
+    queryKey: ["professionals"],
+    queryFn: () => getProfessionals(),
+  });
+  const assignmentQuery = useQuery({
+    queryKey: ["service-professionals-assignment", editingService?.id],
+    enabled: isFormOpen && Boolean(editingService),
+    queryFn: () => getServiceProfessionalsAssignment(editingService!.id),
   });
 
   const services = servicesQuery.data ?? [];
+  const professionals = professionalsQuery.data ?? [];
+  const activeProfessionals = professionals.filter(
+    (professional) => professional.active,
+  );
   const activeCount = useMemo(
     () => services.filter((service) => service.active).length,
     [services],
@@ -51,17 +74,36 @@ export function AdminServicesPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (payload: ServicePayload) =>
-      editingService
-        ? updateService(editingService.id, payload)
-        : createService(payload),
+    mutationFn: async (payload: ServicePayload) => {
+      if (
+        assignmentMode === "SELECTED_PROFESSIONALS" &&
+        selectedProfessionalIds.length === 0
+      ) {
+        throw new Error("Selecciona al menos un profesional.");
+      }
+
+      const savedService = editingService
+        ? await updateService(editingService.id, payload)
+        : await createService(payload);
+
+      await updateServiceProfessionalsAssignment(savedService.id, {
+        mode: assignmentMode,
+        professionalIds:
+          assignmentMode === "SELECTED_PROFESSIONALS"
+            ? selectedProfessionalIds
+            : [],
+      });
+
+      return savedService;
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["services"] });
+      await queryClient.invalidateQueries({ queryKey: ["professionals"] });
       closeForm();
     },
     onError: (error) => {
       setFormError(
-        error instanceof ApiError
+        error instanceof ApiError || error instanceof Error
           ? error.message
           : "No se pudo guardar el servicio.",
       );
@@ -77,6 +119,8 @@ export function AdminServicesPage() {
   function openCreateForm() {
     setEditingService(null);
     setFormError(null);
+    setAssignmentMode("ALL_PROFESSIONALS");
+    setSelectedProfessionalIds([]);
     form.reset(emptyValues);
     setIsFormOpen(true);
   }
@@ -90,15 +134,30 @@ export function AdminServicesPage() {
       durationMinutes: service.durationMinutes,
       price: service.price,
     });
+    setAssignmentMode("ALL_PROFESSIONALS");
+    setSelectedProfessionalIds([]);
     setIsFormOpen(true);
   }
 
   function closeForm() {
     setEditingService(null);
     setFormError(null);
+    setAssignmentMode("ALL_PROFESSIONALS");
+    setSelectedProfessionalIds([]);
     form.reset(emptyValues);
     setIsFormOpen(false);
   }
+
+  useEffect(() => {
+    if (!assignmentQuery.data) {
+      return;
+    }
+
+    setAssignmentMode(assignmentQuery.data.mode);
+    setSelectedProfessionalIds(
+      assignmentQuery.data.professionals.map((professional) => professional.id),
+    );
+  }, [assignmentQuery.data]);
 
   function onSubmit(values: ServiceFormValues) {
     setFormError(null);
@@ -134,22 +193,11 @@ export function AdminServicesPage() {
       </div>
 
       {isFormOpen ? (
-        <article className="admin-card catalog-form-card">
-          <div className="card-heading">
-            <div>
-              <p className="admin-kicker">{editingService ? "Editar" : "Crear"}</p>
-              <h3>{editingService ? editingService.name : "Nuevo servicio"}</h3>
-            </div>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={closeForm}
-              aria-label="Cerrar formulario"
-            >
-              <X aria-hidden="true" size={18} />
-            </button>
-          </div>
-
+        <AdminModal
+          kicker={editingService ? "Editar" : "Crear"}
+          title={editingService ? editingService.name : "Nuevo servicio"}
+          onClose={closeForm}
+        >
           <form className="admin-form-grid" onSubmit={form.handleSubmit(onSubmit)}>
             <label>
               Nombre
@@ -212,6 +260,46 @@ export function AdminServicesPage() {
               />
             </label>
 
+            <div className="assignment-panel form-span-2">
+              <div>
+                <p className="admin-kicker">Profesionales</p>
+                <strong>Disponibilidad del servicio</strong>
+              </div>
+              <div className="segmented-control" role="group">
+                <button
+                  type="button"
+                  className={assignmentMode === "ALL_PROFESSIONALS" ? "active" : ""}
+                  onClick={() => setAssignmentMode("ALL_PROFESSIONALS")}
+                >
+                  Todos
+                </button>
+                <button
+                  type="button"
+                  className={
+                    assignmentMode === "SELECTED_PROFESSIONALS" ? "active" : ""
+                  }
+                  onClick={() => setAssignmentMode("SELECTED_PROFESSIONALS")}
+                >
+                  Seleccionar
+                </button>
+              </div>
+              {assignmentMode === "SELECTED_PROFESSIONALS" ? (
+                <Checklist
+                  emptyLabel="No hay profesionales activos para asignar."
+                  items={activeProfessionals.map((professional) => ({
+                    id: professional.id,
+                    label: professional.fullName,
+                  }))}
+                  selectedIds={selectedProfessionalIds}
+                  onChange={setSelectedProfessionalIds}
+                />
+              ) : (
+                <p className="assignment-hint">
+                  El servicio queda disponible para todos los profesionales activos.
+                </p>
+              )}
+            </div>
+
             {formError ? <div className="admin-form-error">{formError}</div> : null}
 
             <div className="form-actions">
@@ -227,7 +315,7 @@ export function AdminServicesPage() {
               </button>
             </div>
           </form>
-        </article>
+        </AdminModal>
       ) : null}
 
       <article className="admin-card catalog-list-card">
@@ -330,4 +418,44 @@ function FieldError({ message }: { message?: string }) {
 
 function CatalogState({ label }: { label: string }) {
   return <div className="dashboard-state">{label}</div>;
+}
+
+function Checklist({
+  emptyLabel,
+  items,
+  onChange,
+  selectedIds,
+}: {
+  emptyLabel: string;
+  items: Array<{ id: number; label: string }>;
+  onChange: (ids: number[]) => void;
+  selectedIds: number[];
+}) {
+  if (items.length === 0) {
+    return <p className="assignment-hint">{emptyLabel}</p>;
+  }
+
+  return (
+    <div className="assignment-checklist">
+      {items.map((item) => {
+        const checked = selectedIds.includes(item.id);
+        return (
+          <label key={item.id}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() =>
+                onChange(
+                  checked
+                    ? selectedIds.filter((id) => id !== item.id)
+                    : [...selectedIds, item.id],
+                )
+              }
+            />
+            <span>{item.label}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
 }

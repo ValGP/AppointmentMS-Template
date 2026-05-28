@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff, X } from "lucide-react";
+import { Edit3, Plus, Power, PowerOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
+import { AdminModal } from "../components/AdminModal";
 import {
   createClient,
   getClients,
@@ -129,22 +130,11 @@ export function AdminClientsPage() {
       </div>
 
       {isFormOpen ? (
-        <article className="admin-card catalog-form-card">
-          <div className="card-heading">
-            <div>
-              <p className="admin-kicker">{editingClient ? "Editar" : "Crear"}</p>
-              <h3>{editingClient ? editingClient.fullName : "Nuevo cliente"}</h3>
-            </div>
-            <button
-              className="icon-button"
-              type="button"
-              onClick={closeForm}
-              aria-label="Cerrar formulario"
-            >
-              <X aria-hidden="true" size={18} />
-            </button>
-          </div>
-
+        <AdminModal
+          kicker={editingClient ? "Editar" : "Crear"}
+          title={editingClient ? editingClient.fullName : "Nuevo cliente"}
+          onClose={closeForm}
+        >
           <form className="admin-form-grid" onSubmit={form.handleSubmit(onSubmit)}>
             <label>
               Nombre completo
@@ -227,7 +217,7 @@ export function AdminClientsPage() {
               </button>
             </div>
           </form>
-        </article>
+        </AdminModal>
       ) : null}
 
       <article className="admin-card catalog-list-card">

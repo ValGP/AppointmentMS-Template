@@ -16,8 +16,39 @@ export type ServicePayload = {
   price: number;
 };
 
-export function getServices() {
-  return apiRequest<ServiceCatalogItem[]>("/api/services");
+export type ServiceSearchParams = {
+  professionalId?: number;
+};
+
+export type ServiceProfessionalAssignmentMode =
+  | "ALL_PROFESSIONALS"
+  | "SELECTED_PROFESSIONALS";
+
+export type ServiceProfessionalsAssignment = {
+  serviceId: number;
+  mode: ServiceProfessionalAssignmentMode;
+  professionals: Array<{
+    id: number;
+    fullName: string;
+    active: boolean;
+    serviceAssignmentMode: string;
+  }>;
+};
+
+export type ServiceProfessionalsAssignmentPayload = {
+  mode: ServiceProfessionalAssignmentMode;
+  professionalIds: number[];
+};
+
+export function getServices(params: ServiceSearchParams = {}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.professionalId !== undefined) {
+    searchParams.set("professionalId", String(params.professionalId));
+  }
+
+  const query = searchParams.toString();
+  return apiRequest<ServiceCatalogItem[]>(`/api/services${query ? `?${query}` : ""}`);
 }
 
 export function createService(payload: ServicePayload) {
@@ -39,6 +70,25 @@ export function setServiceActive(id: number, active: boolean) {
     `/api/services/${id}/${active ? "activate" : "deactivate"}`,
     {
       method: "PATCH",
+    },
+  );
+}
+
+export function getServiceProfessionalsAssignment(id: number) {
+  return apiRequest<ServiceProfessionalsAssignment>(
+    `/api/services/${id}/professionals`,
+  );
+}
+
+export function updateServiceProfessionalsAssignment(
+  id: number,
+  payload: ServiceProfessionalsAssignmentPayload,
+) {
+  return apiRequest<ServiceProfessionalsAssignment>(
+    `/api/services/${id}/professionals`,
+    {
+      method: "PUT",
+      body: payload,
     },
   );
 }

@@ -2,6 +2,8 @@ package com.turnos.api.professionals;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,6 +29,10 @@ public class Professional {
     @Column(nullable = false)
     private boolean active;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private ServiceAssignmentMode serviceAssignmentMode;
+
     protected Professional() {
     }
 
@@ -35,6 +41,7 @@ public class Professional {
         this.email = requireText(email, "email").toLowerCase();
         this.phone = phone;
         this.active = true;
+        this.serviceAssignmentMode = ServiceAssignmentMode.ALL_SERVICES;
     }
 
     public void activate() {
@@ -55,6 +62,22 @@ public class Professional {
         return active;
     }
 
+    public boolean attendsAllServices() {
+        return serviceAssignmentMode == ServiceAssignmentMode.ALL_SERVICES;
+    }
+
+    public boolean usesSelectedServices() {
+        return serviceAssignmentMode == ServiceAssignmentMode.SELECTED_SERVICES;
+    }
+
+    public void setAllServices() {
+        this.serviceAssignmentMode = ServiceAssignmentMode.ALL_SERVICES;
+    }
+
+    public void setSelectedServices() {
+        this.serviceAssignmentMode = ServiceAssignmentMode.SELECTED_SERVICES;
+    }
+
     public Long getId() {
         return id;
     }
@@ -73,6 +96,10 @@ public class Professional {
 
     public boolean isActive() {
         return active;
+    }
+
+    public ServiceAssignmentMode getServiceAssignmentMode() {
+        return serviceAssignmentMode;
     }
 
     private static String requireText(String value, String fieldName) {

@@ -3,12 +3,10 @@ import {
   CalendarClock,
   ChevronLeft,
   ChevronRight,
-  Clock3,
-  Plus,
   RotateCcw,
   X,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import {
@@ -90,20 +88,66 @@ export function AdminCalendarPage() {
 
   const professionalsQuery = useQuery({
     queryKey: ["professionals"],
-    queryFn: getProfessionals,
+    queryFn: () => getProfessionals(),
   });
-  const servicesQuery = useQuery({ queryKey: ["services"], queryFn: getServices });
+  const servicesQuery = useQuery({
+    queryKey: ["services"],
+    queryFn: () => getServices(),
+  });
   const clientsQuery = useQuery({ queryKey: ["clients"], queryFn: getClients });
 
-  const professionals = professionalsQuery.data ?? [];
-  const services = servicesQuery.data ?? [];
+  const allProfessionals = professionalsQuery.data ?? [];
+  const allServices = servicesQuery.data ?? [];
   const clients = clientsQuery.data ?? [];
-  const activeProfessionals = professionals.filter((professional) => professional.active);
-  const activeServices = services.filter((service) => service.active);
+  const allActiveProfessionals = allProfessionals.filter(
+    (professional) => professional.active,
+  );
+  const allActiveServices = allServices.filter((service) => service.active);
+  const requestedServiceId = serviceId || allActiveServices[0]?.id || 0;
+
+  const compatibleProfessionalsQuery = useQuery({
+    queryKey: ["professionals", "compatible-service", requestedServiceId],
+    enabled: requestedServiceId > 0,
+    queryFn: () => getProfessionals({ serviceId: requestedServiceId }),
+  });
+
+  const professionalOptions = (
+    compatibleProfessionalsQuery.data ?? allActiveProfessionals
+  ).filter((professional) => professional.active);
+  const selectedProfessionalId =
+    professionalId &&
+    professionalOptions.some((professional) => professional.id === professionalId)
+      ? professionalId
+      : professionalOptions[0]?.id || 0;
+
+  const compatibleServicesQuery = useQuery({
+    queryKey: ["services", "compatible-professional", selectedProfessionalId],
+    enabled: selectedProfessionalId > 0,
+    queryFn: () => getServices({ professionalId: selectedProfessionalId }),
+  });
+
+  const serviceOptions = (compatibleServicesQuery.data ?? allActiveServices).filter(
+    (service) => service.active,
+  );
+  const selectedServiceId =
+    requestedServiceId &&
+    serviceOptions.some((service) => service.id === requestedServiceId)
+      ? requestedServiceId
+      : serviceOptions[0]?.id || 0;
   const activeClients = clients.filter((client) => client.active);
-  const selectedProfessionalId = professionalId || activeProfessionals[0]?.id || 0;
-  const selectedServiceId = serviceId || activeServices[0]?.id || 0;
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
+
+  useEffect(() => {
+    if (selectedProfessionalId > 0 && selectedProfessionalId !== professionalId) {
+      setProfessionalId(selectedProfessionalId);
+    }
+  }, [professionalId, selectedProfessionalId]);
+
+  useEffect(() => {
+    if (selectedServiceId > 0 && selectedServiceId !== serviceId) {
+      setServiceId(selectedServiceId);
+    }
+  }, [serviceId, selectedServiceId]);
 
   const appointmentsQuery = useQuery({
     queryKey: ["calendar-appointments", selectedProfessionalId, weekStart],
@@ -259,10 +303,10 @@ export function AdminCalendarPage() {
               value={selectedProfessionalId}
               onChange={(event) => setProfessionalId(Number(event.target.value))}
             >
-              {activeProfessionals.length === 0 ? (
-                <option value={0}>Sin profesionales activos</option>
+              {professionalOptions.length === 0 ? (
+                <option value={0}>Sin profesionales compatibles</option>
               ) : null}
-              {activeProfessionals.map((professional) => (
+              {professionalOptions.map((professional) => (
                 <option key={professional.id} value={professional.id}>
                   {professional.fullName}
                 </option>
@@ -275,10 +319,10 @@ export function AdminCalendarPage() {
               value={selectedServiceId}
               onChange={(event) => setServiceId(Number(event.target.value))}
             >
-              {activeServices.length === 0 ? (
-                <option value={0}>Sin servicios activos</option>
+              {serviceOptions.length === 0 ? (
+                <option value={0}>Sin servicios compatibles</option>
               ) : null}
-              {activeServices.map((service) => (
+              {serviceOptions.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name}
                 </option>
@@ -322,7 +366,7 @@ export function AdminCalendarPage() {
         </div>
 
         {selectedProfessionalId === 0 || selectedServiceId === 0 ? (
-          <CalendarState label="Carga al menos un profesional activo y un servicio activo." />
+          <CalendarState label="Carga al menos un profesional compatible y un servicio compatible." />
         ) : null}
         {isLoading ? <CalendarState label="Calculando disponibilidad..." /> : null}
         {hasError ? (

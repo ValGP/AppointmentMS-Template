@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,9 +21,14 @@ import java.util.List;
 public class ProfessionalController {
 
     private final ProfessionalService professionalService;
+    private final ProfessionalServiceAssignmentService professionalServiceAssignmentService;
 
-    public ProfessionalController(ProfessionalService professionalService) {
+    public ProfessionalController(
+            ProfessionalService professionalService,
+            ProfessionalServiceAssignmentService professionalServiceAssignmentService
+    ) {
         this.professionalService = professionalService;
+        this.professionalServiceAssignmentService = professionalServiceAssignmentService;
     }
 
     @PostMapping
@@ -34,7 +40,13 @@ public class ProfessionalController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ProfessionalResponse> findAll() {
+    public List<ProfessionalResponse> findAll(@RequestParam(required = false) Long serviceId) {
+        if (serviceId != null) {
+            return professionalServiceAssignmentService.findProfessionalsForService(serviceId).stream()
+                    .map(ProfessionalResponse::from)
+                    .toList();
+        }
+
         return professionalService.findAll();
     }
 
@@ -60,5 +72,20 @@ public class ProfessionalController {
     @PreAuthorize("hasRole('ADMIN')")
     public ProfessionalResponse deactivate(@PathVariable Long id) {
         return professionalService.deactivate(id);
+    }
+
+    @GetMapping("/{id}/services")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ProfessionalServicesAssignmentResponse findServicesAssignment(@PathVariable Long id) {
+        return professionalServiceAssignmentService.findServicesAssignmentForProfessional(id);
+    }
+
+    @PutMapping("/{id}/services")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ProfessionalServicesAssignmentResponse assignServices(
+            @PathVariable Long id,
+            @Valid @RequestBody ProfessionalServicesAssignmentRequest request
+    ) {
+        return professionalServiceAssignmentService.assignServicesToProfessional(id, request);
     }
 }

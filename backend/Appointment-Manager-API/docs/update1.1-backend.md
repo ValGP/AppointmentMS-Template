@@ -239,6 +239,8 @@ Importante:
 - Internamente la fuente de verdad sigue siendo el profesional.
 - Este endpoint funciona como un atajo administrativo desde la pantalla de servicios.
 - Si se usa `SELECTED_PROFESSIONALS`, el backend debe actualizar las asignaciones de los profesionales afectados de forma consistente.
+- En esta implementacion, `SELECTED_PROFESSIONALS` deja habilitado el servicio solo para los profesionales elegidos. Si un profesional no elegido estaba en `ALL_SERVICES`, pasa a `SELECTED_SERVICES` conservando asignados los otros servicios actuales.
+- En esta implementacion, `ALL_PROFESSIONALS` habilita el servicio para todos los profesionales actuales. Los profesionales que ya estan en `ALL_SERVICES` no necesitan filas extra; los que estan en `SELECTED_SERVICES` reciben una asignacion explicita para ese servicio.
 
 ### 4.4 Consultar profesionales que atienden un servicio
 
@@ -278,6 +280,7 @@ Reglas:
 - Con filtro, devuelven solo combinaciones habilitadas.
 - Para flujo cliente/publico, conviene devolver solo activos.
 - Para admin, puede hacer falta incluir inactivos segun la pantalla.
+- En esta implementacion admin, los listados filtrados mantienen el criterio de catalogo administrativo: pueden incluir entidades inactivas si son compatibles. El filtrado publico/cliente deberia restringir a activos cuando se exponga.
 
 ## 5. Reglas de negocio
 
@@ -369,17 +372,18 @@ Objetivo: agregar el modelo sin tocar todavia los flujos de turnos.
 
 Checklist:
 
-- [ ] Crear enum `ServiceAssignmentMode`.
-- [ ] Agregar `serviceAssignmentMode` a `Professional`.
-- [ ] Crear entidad `ProfessionalService` o mapear relacion many-to-many con entidad explicita.
-- [ ] Crear migracion Flyway para columna y tabla intermedia.
-- [ ] Agregar repositorio para consultar asignaciones.
-- [ ] Agregar metodos de dominio:
-  - [ ] `Professional.attendsAllServices()`
-  - [ ] `Professional.usesSelectedServices()`
-  - [ ] `Professional.setAllServices()`
-  - [ ] `Professional.setSelectedServices()`
-- [ ] Tests unitarios del modo de asignacion.
+- [x] Crear enum `ServiceAssignmentMode`.
+- [x] Agregar `serviceAssignmentMode` a `Professional`.
+- [x] Crear entidad `ProfessionalServiceAssignment` con entidad explicita para la tabla intermedia.
+- [x] Crear migracion Flyway para columna y tabla intermedia.
+- [x] Agregar repositorio para consultar asignaciones.
+- [x] Agregar metodos de dominio:
+  - [x] `Professional.attendsAllServices()`
+  - [x] `Professional.usesSelectedServices()`
+  - [x] `Professional.setAllServices()`
+  - [x] `Professional.setSelectedServices()`
+- [x] Tests unitarios del modo de asignacion.
+- [x] Test de persistencia de asignaciones.
 
 Criterio de cierre:
 
@@ -393,18 +397,18 @@ Objetivo: centralizar la regla professionalId + serviceId.
 
 Checklist:
 
-- [ ] Crear `ProfessionalServiceAssignmentService` o nombre equivalente.
-- [ ] Implementar `canProfessionalProvideService(professionalId, serviceId)`.
-- [ ] Implementar `ensureProfessionalProvidesService(professionalId, serviceId)`.
-- [ ] Implementar consultas:
-  - [ ] servicios habilitados por profesional.
-  - [ ] profesionales habilitados por servicio.
-- [ ] Cubrir casos:
-  - [ ] profesional `ALL_SERVICES`.
-  - [ ] profesional `SELECTED_SERVICES` con servicio asignado.
-  - [ ] profesional `SELECTED_SERVICES` sin servicio asignado.
-  - [ ] servicio/profesional inexistente.
-  - [ ] servicio/profesional inactivo.
+- [x] Crear `ProfessionalServiceAssignmentService` o nombre equivalente.
+- [x] Implementar `canProfessionalProvideService(professionalId, serviceId)`.
+- [x] Implementar `ensureProfessionalProvidesService(professionalId, serviceId)`.
+- [x] Implementar consultas:
+  - [x] servicios habilitados por profesional.
+  - [x] profesionales habilitados por servicio.
+- [x] Cubrir casos:
+  - [x] profesional `ALL_SERVICES`.
+  - [x] profesional `SELECTED_SERVICES` con servicio asignado.
+  - [x] profesional `SELECTED_SERVICES` sin servicio asignado.
+  - [x] servicio/profesional inexistente.
+  - [x] servicio/profesional inactivo.
 
 Criterio de cierre:
 
@@ -418,19 +422,19 @@ Objetivo: permitir administrar servicios desde la ficha del profesional.
 
 Checklist:
 
-- [ ] Crear request `ProfessionalServicesAssignmentRequest`.
-- [ ] Crear response `ProfessionalServicesAssignmentResponse`.
-- [ ] Implementar `GET /api/professionals/{id}/services`.
-- [ ] Implementar `PUT /api/professionals/{id}/services`.
-- [ ] Validar rol `ADMIN`.
-- [ ] Validar serviceIds existentes.
-- [ ] Si `mode = ALL_SERVICES`, limpiar asignaciones manuales.
-- [ ] Si `mode = SELECTED_SERVICES`, reemplazar asignaciones por `serviceIds`.
-- [ ] Tests de controller:
-  - [ ] admin asigna servicios.
-  - [ ] admin vuelve a todos los servicios.
-  - [ ] client recibe `403`.
-  - [ ] serviceId inexistente devuelve `404` o `400` consistente.
+- [x] Crear request `ProfessionalServicesAssignmentRequest`.
+- [x] Crear response `ProfessionalServicesAssignmentResponse`.
+- [x] Implementar `GET /api/professionals/{id}/services`.
+- [x] Implementar `PUT /api/professionals/{id}/services`.
+- [x] Validar rol `ADMIN`.
+- [x] Validar serviceIds existentes.
+- [x] Si `mode = ALL_SERVICES`, limpiar asignaciones manuales.
+- [x] Si `mode = SELECTED_SERVICES`, reemplazar asignaciones por `serviceIds`.
+- [x] Tests de controller:
+  - [x] admin asigna servicios.
+  - [x] admin vuelve a todos los servicios.
+  - [x] client recibe `403`.
+  - [x] serviceId inexistente devuelve `404` o `400` consistente.
 
 Criterio de cierre:
 
@@ -444,17 +448,17 @@ Objetivo: permitir administrar profesionales desde la ficha del servicio.
 
 Checklist:
 
-- [ ] Crear request `ServiceProfessionalsAssignmentRequest`.
-- [ ] Crear response `ServiceProfessionalsAssignmentResponse`.
-- [ ] Implementar `GET /api/services/{id}/professionals`.
-- [ ] Implementar `PUT /api/services/{id}/professionals`.
-- [ ] Definir comportamiento de `ALL_PROFESSIONALS`.
-- [ ] Definir comportamiento de `SELECTED_PROFESSIONALS`.
-- [ ] Validar professionalIds existentes.
-- [ ] Tests de controller:
-  - [ ] admin asigna profesionales a servicio.
-  - [ ] admin vuelve a todos los profesionales compatibles.
-  - [ ] client recibe `403`.
+- [x] Crear request `ServiceProfessionalsAssignmentRequest`.
+- [x] Crear response `ServiceProfessionalsAssignmentResponse`.
+- [x] Implementar `GET /api/services/{id}/professionals`.
+- [x] Implementar `PUT /api/services/{id}/professionals`.
+- [x] Definir comportamiento de `ALL_PROFESSIONALS`.
+- [x] Definir comportamiento de `SELECTED_PROFESSIONALS`.
+- [x] Validar professionalIds existentes.
+- [x] Tests de controller:
+  - [x] admin asigna profesionales a servicio.
+  - [x] admin vuelve a todos los profesionales compatibles.
+  - [x] client recibe `403`.
 
 Criterio de cierre:
 
@@ -468,14 +472,14 @@ Objetivo: preparar agenda, disponibilidad y flujo cliente.
 
 Checklist:
 
-- [ ] Agregar filtro opcional `serviceId` a `GET /api/professionals`.
-- [ ] Agregar filtro opcional `professionalId` a `GET /api/services`.
-- [ ] Decidir si estos listados admin muestran inactivos o solo activos.
-- [ ] Tests:
-  - [ ] `GET /api/professionals?serviceId=1` respeta `ALL_SERVICES`.
-  - [ ] respeta `SELECTED_SERVICES`.
-  - [ ] no devuelve profesionales incompatibles.
-  - [ ] `GET /api/services?professionalId=1` respeta el modo del profesional.
+- [x] Agregar filtro opcional `serviceId` a `GET /api/professionals`.
+- [x] Agregar filtro opcional `professionalId` a `GET /api/services`.
+- [x] Decidir si estos listados admin muestran inactivos o solo activos.
+- [x] Tests:
+  - [x] `GET /api/professionals?serviceId=1` respeta `ALL_SERVICES`.
+  - [x] respeta `SELECTED_SERVICES`.
+  - [x] no devuelve profesionales incompatibles.
+  - [x] `GET /api/services?professionalId=1` respeta el modo del profesional.
 
 Criterio de cierre:
 
@@ -489,15 +493,15 @@ Objetivo: impedir reservas con combinaciones no habilitadas.
 
 Checklist:
 
-- [ ] Inyectar el servicio de compatibilidad en `AppointmentService`.
-- [ ] Validar combinacion antes de crear turno por cliente.
-- [ ] Validar combinacion antes de crear turno por admin.
-- [ ] Reusar error `ConflictException`.
-- [ ] Tests:
-  - [ ] `ALL_SERVICES` permite crear turno.
-  - [ ] `SELECTED_SERVICES` con servicio asignado permite crear turno.
-  - [ ] `SELECTED_SERVICES` sin servicio asignado rechaza con `409`.
-  - [ ] profesional/servicio inactivo sigue rechazando segun reglas existentes.
+- [x] Inyectar el servicio de compatibilidad en `AppointmentService`.
+- [x] Validar combinacion antes de crear turno por cliente.
+- [x] Validar combinacion antes de crear turno por admin.
+- [x] Reusar error `ConflictException`.
+- [x] Tests:
+  - [x] `ALL_SERVICES` permite crear turno.
+  - [x] `SELECTED_SERVICES` con servicio asignado permite crear turno.
+  - [x] `SELECTED_SERVICES` sin servicio asignado rechaza con `409`.
+  - [x] profesional/servicio inactivo sigue rechazando segun reglas existentes.
 
 Criterio de cierre:
 
@@ -511,14 +515,14 @@ Objetivo: que los slots disponibles respeten la relacion.
 
 Checklist:
 
-- [ ] Inyectar el servicio de compatibilidad en `AvailabilityService`.
-- [ ] Antes de calcular slots, verificar combinacion.
-- [ ] Para combinacion no habilitada, devolver lista vacia.
-- [ ] Tests:
-  - [ ] `ALL_SERVICES` devuelve slots si hay horario.
-  - [ ] `SELECTED_SERVICES` asignado devuelve slots.
-  - [ ] `SELECTED_SERVICES` no asignado devuelve `[]`.
-  - [ ] no cambia la logica de bloqueos, horarios ni turnos activos.
+- [x] Inyectar el servicio de compatibilidad en `AvailabilityService`.
+- [x] Antes de calcular slots, verificar combinacion.
+- [x] Para combinacion no habilitada, devolver lista vacia.
+- [x] Tests:
+  - [x] `ALL_SERVICES` devuelve slots si hay horario.
+  - [x] `SELECTED_SERVICES` asignado devuelve slots.
+  - [x] `SELECTED_SERVICES` no asignado devuelve `[]`.
+  - [x] no cambia la logica de bloqueos, horarios ni turnos activos.
 
 Criterio de cierre:
 
@@ -532,17 +536,17 @@ Objetivo: dejar trazabilidad para frontend y pruebas manuales.
 
 Checklist:
 
-- [ ] Actualizar README o documentacion de endpoints.
-- [ ] Actualizar coleccion Postman si se mantiene.
-- [ ] Agregar ejemplos de requests/responses.
-- [ ] Ejecutar suite completa `mvn test`.
-- [ ] Probar manualmente flujo admin:
-  - [ ] crear servicio.
-  - [ ] crear profesional.
-  - [ ] limitar profesional a un servicio.
-  - [ ] consultar disponibilidad habilitada.
-  - [ ] consultar disponibilidad no habilitada.
-  - [ ] intentar crear turno invalido.
+- [x] Actualizar README o documentacion de endpoints.
+- [x] Revisar coleccion Postman existente; se mantiene como smoke general y el contrato nuevo queda documentado en README/OpenAPI.
+- [x] Agregar ejemplos de requests/responses.
+- [x] Ejecutar suite completa `mvn test`.
+- [x] Probar flujo admin con tests de integracion:
+  - [x] crear servicio.
+  - [x] crear profesional.
+  - [x] limitar profesional a un servicio.
+  - [x] consultar disponibilidad habilitada.
+  - [x] consultar disponibilidad no habilitada.
+  - [x] intentar crear turno invalido.
 
 Criterio de cierre:
 
@@ -609,16 +613,16 @@ El backend es la autoridad final sobre si professionalId + serviceId esta habili
 
 ## 10. Criterios de aceptacion generales
 
-- [ ] Un profesional nuevo atiende todos los servicios por defecto.
-- [ ] El admin puede cambiar un profesional a servicios seleccionados.
-- [ ] El admin puede volver un profesional a todos los servicios.
-- [ ] El admin puede consultar que servicios atiende un profesional.
-- [ ] El admin puede consultar que profesionales atienden un servicio.
-- [ ] Crear turno con combinacion invalida devuelve `409`.
-- [ ] `GET /api/availability` no devuelve slots para combinaciones invalidas.
-- [ ] Los CRUD actuales de servicios y profesionales siguen funcionando.
-- [ ] Los tests existentes siguen pasando.
-- [ ] Hay tests nuevos para asignaciones, turnos y disponibilidad.
+- [x] Un profesional nuevo atiende todos los servicios por defecto.
+- [x] El admin puede cambiar un profesional a servicios seleccionados.
+- [x] El admin puede volver un profesional a todos los servicios.
+- [x] El admin puede consultar que servicios atiende un profesional.
+- [x] El admin puede consultar que profesionales atienden un servicio.
+- [x] Crear turno con combinacion invalida devuelve `409`.
+- [x] `GET /api/availability` no devuelve slots para combinaciones invalidas.
+- [x] Los CRUD actuales de servicios y profesionales siguen funcionando.
+- [x] Los tests existentes siguen pasando.
+- [x] Hay tests nuevos para asignaciones, turnos y disponibilidad.
 
 ## 11. Contrato minimo para frontend
 
@@ -669,4 +673,3 @@ En responses de servicios puede agregarse informacion resumida opcional:
 6. `backend: validate service compatibility in appointments`
 7. `backend: apply service compatibility to availability`
 8. `backend: document professional service assignment API`
-

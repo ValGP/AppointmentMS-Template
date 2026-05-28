@@ -524,7 +524,7 @@ Tareas:
 - Listado filtrable de turnos.
 - Vista tipo agenda/listado, no calendario complejo en el MVP.
 - Mostrar inicialmente turnos de la semana actual y la semana siguiente.
-- Crear turno manual.
+- Crear turno manual desde Agenda/Disponibilidad, eligiendo un slot disponible.
 - Confirmar turno pendiente.
 - Rechazar turno pendiente.
 - Cancelar turno.
@@ -537,6 +537,12 @@ Salida esperada:
 - El admin puede operar el ciclo completo de turnos.
 
 ### Fase 4.1 - Cierre operativo del admin antes del cliente
+
+Estado:
+
+- Cerrada como base operativa del admin. Turnos queda como listado/acciones de estado; la creacion de turnos se inicia desde Agenda sobre disponibilidad real.
+- Agenda ya consume disponibilidad semanal por profesional/servicio, muestra semana actual por defecto, permite navegar semanas y abre modal de creacion desde slots disponibles.
+- La disponibilidad respeta la relacion profesional-servicio expuesta por backend mediante filtros compatibles.
 
 Objetivo:
 
@@ -561,7 +567,7 @@ Tareas:
   - Si el admin navega a otra semana, evaluar un boton para volver rapido a la semana actual.
   - La vista debe usar filtros de profesional y servicio, porque la disponibilidad depende de ambos.
 - Conectar las acciones rapidas del dashboard:
-  - "Crear turno manual" debe abrir o navegar al flujo real de nuevo turno.
+  - "Crear turno manual" debe navegar al flujo real de Agenda/Disponibilidad.
   - "Registrar cliente" debe llevar a clientes y abrir/indicar alta de cliente.
   - "Revisar disponibilidad" debe llevar a la vista Agenda/disponibilidad.
 - Revisar si la busqueda global del header queda como placeholder o si debe ocultarse hasta tener una busqueda real.
@@ -575,15 +581,22 @@ Salida esperada:
 - El admin puede cargar datos base, revisar disponibilidad, crear turnos y operar estados sin depender de pantallas placeholder.
 - El flujo administrativo queda suficientemente cerrado como base para construir despues la reserva del cliente reutilizando disponibilidad y reglas ya probadas.
 
-### Preview Fase 4.2 - Relacion profesional-servicio e interfaces de asignacion
+### Fase 4.2 - Relacion profesional-servicio e interfaces de asignacion
+
+Estado:
+
+- Cerrada. Los formularios administrativos de creacion/edicion ahora se abren en modal para mantener la misma experiencia en desktop, tablet y mobile.
+- Profesionales permite elegir entre `Todos los servicios` y `Seleccionar servicios`.
+- Servicios permite elegir entre `Todos los profesionales` y `Seleccionar profesionales`.
+- Agenda/Disponibilidad ya usa los filtros compatibles del backend para evitar combinaciones no validas.
 
 Objetivo:
 
-Adaptar el frontend admin cuando el backend incorpore la relacion entre profesionales y servicios. Esta fase depende primero de cambios en backend.
+Completar las interfaces administrativas para asignar servicios a profesionales y profesionales a servicios. El backend ya incorporo la relacion y la Fase 4.1 ya usa los filtros compatibles en Agenda.
 
 Contexto:
 
-Durante la implementacion de Agenda/Disponibilidad se detecto que actualmente no existe una relacion explicita entre profesional y servicio. El sistema asume, en la practica, que cualquier profesional activo puede atender cualquier servicio activo. Para un negocio simple esto reduce carga operativa, pero para el flujo cliente y para la agenda real puede generar combinaciones poco validas.
+Durante la implementacion de Agenda/Disponibilidad se detecto que la relacion profesional-servicio es importante para evitar combinaciones poco validas. El backend ya permite un modelo hibrido: por defecto todos con todos, o seleccion explicita cuando haga falta.
 
 Decision de producto sugerida:
 
@@ -593,29 +606,159 @@ Usar un modelo hibrido:
 - Opcionalmente, el admin puede limitar un profesional a servicios especificos.
 - Al crear un servicio nuevo, se debe poder definir si queda disponible para todos los profesionales o solo para profesionales seleccionados.
 
-Tareas frontend previstas:
+Tareas frontend:
 
-- En creacion/edicion de profesionales, agregar una interfaz de decision:
+- En creacion/edicion de profesionales, agregar una interfaz de decision. Implementado:
   - `Atiende todos los servicios`.
   - `Atiende servicios especificos`.
   - Si elige servicios especificos, mostrar selector/checklist de servicios.
-- En creacion/edicion de servicios, agregar una interfaz equivalente:
+- En creacion/edicion de servicios, agregar una interfaz equivalente. Implementado:
   - `Asignar a todos los profesionales`.
   - `Asignar solo a profesionales seleccionados`.
-- Ajustar Agenda/Disponibilidad para que los selects se filtren segun la relacion:
+- Ajustar Agenda/Disponibilidad para que los selects se filtren segun la relacion. Implementado:
   - Si se elige servicio, mostrar profesionales compatibles.
   - Si se elige profesional, mostrar servicios compatibles.
-- Ajustar creacion manual de turnos para impedir combinaciones profesional-servicio no habilitadas antes de enviar al backend.
+- Ajustar creacion manual de turnos para impedir combinaciones profesional-servicio no habilitadas antes de enviar al backend. Implementado mediante filtros de Agenda y validacion del backend.
 - Ajustar futuro flujo cliente para usar primero servicios y luego profesionales/slots compatibles.
-- Agregar estados vacios claros cuando no haya profesionales compatibles con un servicio o servicios compatibles con un profesional.
+- Agregar estados vacios claros cuando no haya profesionales compatibles con un servicio o servicios compatibles con un profesional. Implementado en Agenda y selectores.
 
-Dependencias backend:
+Endpoints backend disponibles:
 
-- Endpoint o campo para saber si un profesional atiende todos los servicios o solo algunos.
-- Endpoints para consultar/asignar servicios de un profesional.
-- Endpoints o payloads para asignar profesionales al crear/editar un servicio.
-- Validacion backend para rechazar turnos con combinaciones profesional-servicio no habilitadas.
-- Disponibilidad debe respetar la relacion profesional-servicio.
+- `GET /api/professionals?serviceId={id}`.
+- `GET /api/services?professionalId={id}`.
+- `GET /api/professionals/{id}/services`.
+- `PUT /api/professionals/{id}/services`.
+- `GET /api/services/{id}/professionals`.
+- `PUT /api/services/{id}/professionals`.
+- Backend valida combinaciones al crear turnos y disponibilidad devuelve vacio si la combinacion no corresponde.
+
+### Fase 4.3 - Seguridad operativa y mejoras UX del admin
+
+Objetivo:
+
+Pulir el panel admin para evitar acciones accidentales, aclarar estados y mejorar flujos de uso reales antes de pasar al modulo cliente. Esta fase se divide en mini-fases para implementar y probar por zonas.
+
+Principios:
+
+- Toda accion que cambie estado debe pedir confirmacion. Aunque no sea destructiva, algunas acciones no tienen vuelta atras simple, por ejemplo confirmar, completar o marcar no-show un turno.
+- Las acciones exitosas deben mostrar feedback visible durante unos segundos.
+- Los listados principales deben priorizar elementos activos y dejar los inactivos en una vista secundaria.
+- Agenda debe partir desde el servicio y luego profesional, porque el usuario normalmente consulta por servicio antes de conocer quien lo atiende.
+- Los filtros deben poder restablecerse de forma clara.
+
+#### Fase 4.3.1 - Confirmaciones y feedback global
+
+Alcance:
+
+- Crear un modal reutilizable de confirmacion para acciones sensibles.
+- Crear un sistema simple de toast/banner de exito.
+- Aplicar confirmacion a:
+  - confirmar turno.
+  - rechazar turno.
+  - cancelar turno.
+  - completar turno.
+  - marcar no-show.
+  - desactivar/reactivar servicio.
+  - desactivar/reactivar profesional.
+  - desactivar/reactivar cliente.
+  - desactivar/reactivar horario.
+  - desactivar/reactivar bloqueo.
+- Mostrar feedback despues de acciones importantes, por ejemplo:
+  - `Turno confirmado`.
+  - `Servicio desactivado`.
+  - `Profesional reactivado`.
+  - `Horario guardado`.
+
+Salida esperada:
+
+- El admin no puede cambiar estados por accidente.
+- Cada accion exitosa deja una confirmacion visual temporal.
+
+#### Fase 4.3.2 - Agenda mas clara y filtros restablecibles
+
+Alcance:
+
+- Reordenar filtros de Agenda para ir primero por `Servicio` y despues `Profesional`.
+- Mantener el filtrado compatible: al elegir servicio, se muestran solo profesionales compatibles.
+- Agregar accion `Restablecer filtros` o equivalente:
+  - vuelve a la semana actual.
+  - vuelve al primer servicio activo disponible.
+  - vuelve al primer profesional compatible con ese servicio.
+- Agregar estados vacios mas explicitos:
+  - no hay profesionales compatibles con este servicio.
+  - no hay servicios activos.
+  - no hay horarios cargados para este profesional.
+  - no hay disponibilidad por bloqueos o turnos ocupados.
+- En el modal de crear turno desde Agenda, mostrar un resumen superior antes de guardar:
+  - cliente seleccionado.
+  - profesional.
+  - servicio.
+  - dia y horario.
+
+Salida esperada:
+
+- El admin entiende por que ve o no ve disponibilidad.
+- Crear turno desde Agenda tiene una confirmacion visual del contexto antes de guardar.
+
+#### Fase 4.3.3 - Activos e inactivos en catalogos
+
+Alcance:
+
+- En pantallas con entidades desactivables, el listado principal debe mostrar activos por defecto.
+- Agregar un boton o accion secundaria para ver inactivos:
+  - servicios inactivos.
+  - profesionales inactivos.
+  - clientes inactivos.
+  - horarios inactivos.
+  - bloqueos inactivos.
+- La vista de inactivos puede abrirse como modal.
+- Desde ese modal se puede reactivar, siempre con confirmacion.
+- Mantener conteos o indicadores para que el admin sepa que existen elementos inactivos sin ensuciar la vista principal.
+
+Salida esperada:
+
+- Los listados diarios quedan limpios.
+- Reactivar algo sigue siendo facil y controlado.
+
+#### Fase 4.3.4 - Horarios por profesional
+
+Alcance:
+
+- Reorganizar la seccion Horarios para elegir primero un profesional.
+- Mostrar en la lista solo los horarios del profesional seleccionado.
+- El boton `Nuevo horario` debe abrir el modal con ese profesional preseleccionado.
+- Mantener posibilidad de cambiar profesional dentro del modal si hace falta.
+- Agregar restablecer filtro o selector claro cuando no haya profesional cargado.
+
+Salida esperada:
+
+- Horarios deja de verse como una lista mezclada y pasa a ser una vista operativa por profesional.
+
+#### Fase 4.3.5 - Historial de turnos desde Clientes
+
+Alcance:
+
+- En la lista de clientes, agregar accion para ver historial de turnos.
+- Abrir un modal o vista secundaria con turnos del cliente.
+- Mostrar datos minimos:
+  - fecha y hora.
+  - servicio.
+  - profesional.
+  - estado.
+  - notas si existen.
+- Reutilizar `GET /api/appointments` con filtro `clientId` si alcanza para el MVP.
+
+Salida esperada:
+
+- El admin puede consultar rapidamente el historial de una persona sin salir de Clientes.
+
+Orden recomendado:
+
+1. Fase 4.3.1, porque el modal de confirmacion y los toasts se reutilizan en todo lo demas.
+2. Fase 4.3.2, porque Agenda es el flujo central de creacion de turnos.
+3. Fase 4.3.3, porque limpia todos los catalogos y aprovecha confirmaciones.
+4. Fase 4.3.4, porque mejora una zona puntual que hoy se vuelve dificil de leer.
+5. Fase 4.3.5, porque suma mucho valor operativo pero depende menos del flujo principal.
 
 ### Fase 5 - Flujo cliente para solicitar turno
 

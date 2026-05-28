@@ -1,6 +1,9 @@
 package com.turnos.api.services;
 
 import jakarta.validation.Valid;
+import com.turnos.api.professionals.ProfessionalServiceAssignmentService;
+import com.turnos.api.professionals.ServiceProfessionalsAssignmentRequest;
+import com.turnos.api.professionals.ServiceProfessionalsAssignmentResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,9 +24,14 @@ import java.util.List;
 public class ServiceController {
 
     private final ServiceCatalogService serviceCatalogService;
+    private final ProfessionalServiceAssignmentService professionalServiceAssignmentService;
 
-    public ServiceController(ServiceCatalogService serviceCatalogService) {
+    public ServiceController(
+            ServiceCatalogService serviceCatalogService,
+            ProfessionalServiceAssignmentService professionalServiceAssignmentService
+    ) {
         this.serviceCatalogService = serviceCatalogService;
+        this.professionalServiceAssignmentService = professionalServiceAssignmentService;
     }
 
     @PostMapping
@@ -34,7 +43,13 @@ public class ServiceController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ServiceResponse> findAll() {
+    public List<ServiceResponse> findAll(@RequestParam(required = false) Long professionalId) {
+        if (professionalId != null) {
+            return professionalServiceAssignmentService.findServicesForProfessional(professionalId).stream()
+                    .map(ServiceResponse::from)
+                    .toList();
+        }
+
         return serviceCatalogService.findAll();
     }
 
@@ -60,5 +75,20 @@ public class ServiceController {
     @PreAuthorize("hasRole('ADMIN')")
     public ServiceResponse deactivate(@PathVariable Long id) {
         return serviceCatalogService.deactivate(id);
+    }
+
+    @GetMapping("/{id}/professionals")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ServiceProfessionalsAssignmentResponse findProfessionalsAssignment(@PathVariable Long id) {
+        return professionalServiceAssignmentService.findProfessionalsAssignmentForService(id);
+    }
+
+    @PutMapping("/{id}/professionals")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ServiceProfessionalsAssignmentResponse assignProfessionals(
+            @PathVariable Long id,
+            @Valid @RequestBody ServiceProfessionalsAssignmentRequest request
+    ) {
+        return professionalServiceAssignmentService.assignProfessionalsToService(id, request);
     }
 }

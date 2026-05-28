@@ -8,6 +8,7 @@ import com.turnos.api.common.ResourceNotFoundException;
 import com.turnos.api.notifications.NotificationService;
 import com.turnos.api.professionals.Professional;
 import com.turnos.api.professionals.ProfessionalRepository;
+import com.turnos.api.professionals.ProfessionalServiceAssignmentService;
 import com.turnos.api.services.ServiceRepository;
 import com.turnos.api.users.User;
 import com.turnos.api.users.UserRepository;
@@ -34,6 +35,7 @@ public class AppointmentService {
     private final BusinessHoursRepository businessHoursRepository;
     private final AvailabilityBlockRepository availabilityBlockRepository;
     private final NotificationService notificationService;
+    private final ProfessionalServiceAssignmentService professionalServiceAssignmentService;
 
     public AppointmentService(
             AppointmentRepository appointmentRepository,
@@ -42,7 +44,8 @@ public class AppointmentService {
             ServiceRepository serviceRepository,
             BusinessHoursRepository businessHoursRepository,
             AvailabilityBlockRepository availabilityBlockRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            ProfessionalServiceAssignmentService professionalServiceAssignmentService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.userRepository = userRepository;
@@ -51,6 +54,7 @@ public class AppointmentService {
         this.businessHoursRepository = businessHoursRepository;
         this.availabilityBlockRepository = availabilityBlockRepository;
         this.notificationService = notificationService;
+        this.professionalServiceAssignmentService = professionalServiceAssignmentService;
     }
 
     @Transactional
@@ -63,6 +67,7 @@ public class AppointmentService {
         validateClient(client);
         validateProfessional(professional);
         validateService(service);
+        professionalServiceAssignmentService.ensureProfessionalProvidesService(professional.getId(), service.getId());
         validateAvailability(professional.getId(), request.startDateTime(), endDateTime);
 
         Appointment appointment = authenticatedUser.getRole() == UserRole.ADMIN
