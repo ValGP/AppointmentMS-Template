@@ -6,14 +6,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Edit3,
   RefreshCw,
   Search,
   UserX,
   X,
+  type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError } from "../../../shared/api/httpClient";
 import {
   addDays,
@@ -21,8 +21,8 @@ import {
   formatShortDateTime,
   formatTime,
   startOfWeek,
-  toLocalDateTimeParam,
 } from "../../../shared/utils/date";
+import { usePersistentState } from "../../../shared/hooks/usePersistentState";
 import {
   cancelAppointmentByAdmin,
   completeAppointment,
@@ -36,6 +36,7 @@ import {
 import { getClients } from "../../clients/api/clientsApi";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
 import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminModal } from "../components/AdminModal";
 import { AdminToast } from "../components/AdminToast";
 import { useAdminToast } from "../hooks/useAdminToast";
@@ -134,16 +135,57 @@ function toDateTimeEnd(value: string) {
   return `${value}T23:59:59`;
 }
 
+function isAppointmentStatus(value: string): value is AppointmentStatus {
+  return statusOptions.some((status) => status.value === value);
+}
+
+function getFiltersFromSearchParams(searchParams: URLSearchParams) {
+  const nextFilters: Partial<Filters> = {};
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  const status = searchParams.get("status");
+  const clientId = searchParams.get("clientId");
+  const professionalId = searchParams.get("professionalId");
+
+  if (from) {
+    nextFilters.from = from;
+  }
+
+  if (to) {
+    nextFilters.to = to;
+  }
+
+  if (status && isAppointmentStatus(status)) {
+    nextFilters.status = status;
+  }
+
+  if (clientId) {
+    nextFilters.clientId = clientId;
+  }
+
+  if (professionalId) {
+    nextFilters.professionalId = professionalId;
+  }
+
+  return Object.keys(nextFilters).length > 0 ? nextFilters : null;
+}
+
 export function AdminAppointmentsPage() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(0);
-  const [filters, setFilters] = useState<Filters>({
+  const [searchParams] = useSearchParams();
+  const searchKey = searchParams.toString();
+  const [page, setPage] = usePersistentState("admin:appointments:page", 0);
+  const [filters, setFilters] = usePersistentState<Filters>("admin:appointments:filters", {
     clientId: "",
     professionalId: "",
     status: "",
     from: toDateInput(initialStart),
     to: toDateInput(initialEnd),
   });
+  const [appointmentSort, setAppointmentSort] = usePersistentState(
+    "admin:appointments:sort",
+    "startDateTime,asc",
+  );
   const [transition, setTransition] = useState<{
     action: TransitionAction;
     appointment: Appointment;
@@ -152,9 +194,22 @@ export function AdminAppointmentsPage() {
     action: SimpleAction;
     appointment: Appointment;
   } | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const [transitionReason, setTransitionReason] = useState("");
   const [transitionError, setTransitionError] = useState<string | null>(null);
   const { showToast, toast } = useAdminToast();
+
+  useEffect(() => {
+    const nextFilters = getFiltersFromSearchParams(new URLSearchParams(searchKey));
+
+    if (!nextFilters) {
+      return;
+    }
+
+    setFilters((current) => ({ ...current, ...nextFilters }));
+    setPage(0);
+  }, [searchKey, setFilters, setPage]);
 
   const appointmentsQuery = useQuery({
     queryKey: ["admin-appointments", filters, page],
@@ -169,7 +224,7 @@ export function AdminAppointmentsPage() {
         to: filters.to ? toDateTimeEnd(filters.to) : undefined,
         page,
         size: 40,
-        sort: "startDateTime,asc",
+        sort: appointmentSort,
       }),
   });
 
@@ -274,9 +329,15 @@ export function AdminAppointmentsPage() {
   }
 
   function openTransitionModal(action: TransitionAction, appointment: Appointment) {
+    setSelectedAppointment(null);
     setTransition({ action, appointment });
     setTransitionReason("");
     setTransitionError(null);
+  }
+
+  function openSimpleAction(action: SimpleAction, appointment: Appointment) {
+    setSelectedAppointment(null);
+    setSimpleAction({ action, appointment });
   }
 
   function closeTransitionModal() {
@@ -339,6 +400,34 @@ export function AdminAppointmentsPage() {
             <RefreshCw aria-hidden="true" size={16} />
             Actualizar
           </button>
+        </div>
+
+        <div className="appointment-status-tabs" role="group" aria-label="Vista rapida de turnos">
+          <StatusTab
+            active={filters.status === ""}
+            label="Todos"
+            onClick={() => updateFilter("status", "")}
+          />
+          <StatusTab
+            active={filters.status === "PENDING"}
+            label="Pendientes"
+            onClick={() => updateFilter("status", "PENDING")}
+          />
+          <StatusTab
+            active={filters.status === "CONFIRMED"}
+            label="Confirmados"
+            onClick={() => updateFilter("status", "CONFIRMED")}
+          />
+          <StatusTab
+            active={filters.status === "COMPLETED"}
+            label="Completados"
+            onClick={() => updateFilter("status", "COMPLETED")}
+          />
+          <StatusTab
+            active={filters.status === "CANCELED_BY_ADMIN"}
+            label="Cancelados"
+            onClick={() => updateFilter("status", "CANCELED_BY_ADMIN")}
+          />
         </div>
 
         <div className="appointments-filter-grid">
@@ -406,6 +495,21 @@ export function AdminAppointmentsPage() {
             <Search aria-hidden="true" size={16} />
             Semana actual + proxima
           </button>
+          <label>
+            Orden
+            <select
+              value={appointmentSort}
+              onChange={(event) => {
+                setAppointmentSort(event.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="startDateTime,asc">Fecha cercana</option>
+              <option value="startDateTime,desc">Fecha lejana</option>
+              <option value="status,asc">Estado A-Z</option>
+              <option value="client.fullName,asc">Cliente A-Z</option>
+            </select>
+          </label>
         </div>
       </article>
 
@@ -450,7 +554,15 @@ export function AdminAppointmentsPage() {
         {!appointmentsQuery.isLoading &&
         !appointmentsQuery.isError &&
         appointments.length === 0 ? (
-          <DashboardState label="No hay turnos para los filtros elegidos." />
+          <AdminEmptyState
+            label="No hay turnos para los filtros elegidos."
+            supportingText="Puedes revisar disponibilidad en Agenda o ajustar los filtros para ampliar la busqueda."
+            action={
+              <Link className="admin-primary-button" to="/admin/calendar">
+                Revisar agenda
+              </Link>
+            }
+          />
         ) : null}
 
         {dayKeys.length > 0 ? (
@@ -462,22 +574,8 @@ export function AdminAppointmentsPage() {
                   {groupedAppointments[dayKey].map((appointment) => (
                     <AppointmentAdminRow
                       appointment={appointment}
-                      isBusy={
-                        simpleActionMutation.isPending ||
-                        transitionMutation.isPending
-                      }
                       key={appointment.id}
-                      onCancel={() => openTransitionModal("cancel", appointment)}
-                      onComplete={() =>
-                        setSimpleAction({ action: "complete", appointment })
-                      }
-                      onConfirm={() =>
-                        setSimpleAction({ action: "confirm", appointment })
-                      }
-                      onNoShow={() =>
-                        setSimpleAction({ action: "no-show", appointment })
-                      }
-                      onReject={() => openTransitionModal("reject", appointment)}
+                      onOpen={() => setSelectedAppointment(appointment)}
                     />
                   ))}
                 </div>
@@ -486,6 +584,19 @@ export function AdminAppointmentsPage() {
           </div>
         ) : null}
       </article>
+
+      {selectedAppointment ? (
+        <AppointmentDetailModal
+          appointment={selectedAppointment}
+          isBusy={simpleActionMutation.isPending || transitionMutation.isPending}
+          onCancel={() => openTransitionModal("cancel", selectedAppointment)}
+          onClose={() => setSelectedAppointment(null)}
+          onComplete={() => openSimpleAction("complete", selectedAppointment)}
+          onConfirm={() => openSimpleAction("confirm", selectedAppointment)}
+          onNoShow={() => openSimpleAction("no-show", selectedAppointment)}
+          onReject={() => openTransitionModal("reject", selectedAppointment)}
+        />
+      ) : null}
 
       {transition ? (
         <AdminModal
@@ -553,30 +664,33 @@ export function AdminAppointmentsPage() {
   );
 }
 
+function StatusTab({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={active ? "is-active" : ""}
+      type="button"
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+}
+
 function AppointmentAdminRow({
   appointment,
-  isBusy,
-  onCancel,
-  onComplete,
-  onConfirm,
-  onNoShow,
-  onReject,
+  onOpen,
 }: {
   appointment: Appointment;
-  isBusy: boolean;
-  onCancel: () => void;
-  onComplete: () => void;
-  onConfirm: () => void;
-  onNoShow: () => void;
-  onReject: () => void;
+  onOpen: () => void;
 }) {
-  const canConfirm = appointment.status === "PENDING";
-  const canReject = appointment.status === "PENDING";
-  const canCancel =
-    appointment.status === "PENDING" || appointment.status === "CONFIRMED";
-  const canComplete = appointment.status === "CONFIRMED";
-  const canNoShow = appointment.status === "CONFIRMED";
-
   return (
     <article className="appointment-admin-row">
       <div className="appointment-time">
@@ -595,75 +709,201 @@ function AppointmentAdminRow({
         {statusLabels[appointment.status]}
       </span>
       <div className="appointment-admin-actions">
-        {canConfirm ? (
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onConfirm}
-            disabled={isBusy}
-            aria-label={`Confirmar turno ${appointment.id}`}
-            title="Confirmar"
-          >
-            <Check aria-hidden="true" size={16} />
-          </button>
-        ) : null}
-        {canReject ? (
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onReject}
-            disabled={isBusy}
-            aria-label={`Rechazar turno ${appointment.id}`}
-            title="Rechazar"
-          >
-            <X aria-hidden="true" size={16} />
-          </button>
-        ) : null}
-        {canCancel ? (
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onCancel}
-            disabled={isBusy}
-            aria-label={`Cancelar turno ${appointment.id}`}
-            title="Cancelar"
-          >
-            <Ban aria-hidden="true" size={16} />
-          </button>
-        ) : null}
-        {canComplete ? (
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onComplete}
-            disabled={isBusy}
-            aria-label={`Completar turno ${appointment.id}`}
-            title="Completar"
-          >
-            <CheckCircle2 aria-hidden="true" size={16} />
-          </button>
-        ) : null}
-        {canNoShow ? (
-          <button
-            className="icon-button"
-            type="button"
-            onClick={onNoShow}
-            disabled={isBusy}
-            aria-label={`Marcar no-show turno ${appointment.id}`}
-            title="No asistio"
-          >
-            <UserX aria-hidden="true" size={16} />
-          </button>
-        ) : null}
-        {!canConfirm && !canReject && !canCancel && !canComplete && !canNoShow ? (
-          <span className="appointment-locked">
-            <Edit3 aria-hidden="true" size={14} />
-            Cerrado
-          </span>
-        ) : null}
+        <button className="admin-soft-button" type="button" onClick={onOpen}>
+          <Search aria-hidden="true" size={16} />
+          Ver detalle
+        </button>
       </div>
     </article>
   );
+}
+
+function AppointmentDetailModal({
+  appointment,
+  isBusy,
+  onCancel,
+  onClose,
+  onComplete,
+  onConfirm,
+  onNoShow,
+  onReject,
+}: {
+  appointment: Appointment;
+  isBusy: boolean;
+  onCancel: () => void;
+  onClose: () => void;
+  onComplete: () => void;
+  onConfirm: () => void;
+  onNoShow: () => void;
+  onReject: () => void;
+}) {
+  const canConfirm = appointment.status === "PENDING";
+  const canReject = appointment.status === "PENDING";
+  const canCancel =
+    appointment.status === "PENDING" || appointment.status === "CONFIRMED";
+  const canComplete = appointment.status === "CONFIRMED";
+  const canNoShow = appointment.status === "CONFIRMED";
+
+  return (
+    <AdminModal
+      kicker="Detalle"
+      title={`Turno #${appointment.id}`}
+      onClose={onClose}
+    >
+      <div className="appointment-detail-grid">
+        <DetailItem label="Cliente" value={appointment.clientName} />
+        <DetailItem label="Profesional" value={appointment.professionalName} />
+        <DetailItem label="Servicio" value={appointment.serviceName} />
+        <DetailItem
+          label="Fecha y horario"
+          value={`${formatShortDateTime(appointment.startDateTime)} - ${formatTime(
+            appointment.endDateTime,
+          )}`}
+        />
+        <DetailItem
+          label="Estado"
+          value={
+            <span className={`status-badge tone-${statusTone[appointment.status]}`}>
+              {statusLabels[appointment.status]}
+            </span>
+          }
+        />
+        <DetailItem label="Creado por" value={appointment.createdByRole} />
+        <DetailItem
+          label="Notas"
+          value={appointment.notes || "Sin notas"}
+          wide
+        />
+        {appointment.rejectionReason ? (
+          <DetailItem
+            label="Motivo de rechazo"
+            value={appointment.rejectionReason}
+            wide
+          />
+        ) : null}
+        {appointment.cancelReason ? (
+          <DetailItem
+            label="Motivo de cancelacion"
+            value={appointment.cancelReason}
+            wide
+          />
+        ) : null}
+        <DetailItem
+          label="Confirmado"
+          value={formatOptionalDate(appointment.confirmedAt)}
+        />
+        <DetailItem
+          label="Cancelado"
+          value={formatOptionalDate(appointment.canceledAt)}
+        />
+        <DetailItem
+          label="Completado"
+          value={formatOptionalDate(appointment.completedAt)}
+        />
+        <DetailItem
+          label="No asistio"
+          value={formatOptionalDate(appointment.noShowAt)}
+        />
+      </div>
+
+      <div className="appointment-detail-actions">
+        <h4>Acciones disponibles</h4>
+        {canConfirm ? (
+          <ActionButton
+            icon={Check}
+            label="Confirmar turno"
+            onClick={onConfirm}
+            disabled={isBusy}
+          />
+        ) : null}
+        {canReject ? (
+          <ActionButton
+            icon={X}
+            label="Rechazar turno"
+            onClick={onReject}
+            disabled={isBusy}
+            tone="danger"
+          />
+        ) : null}
+        {canCancel ? (
+          <ActionButton
+            icon={Ban}
+            label="Cancelar turno"
+            onClick={onCancel}
+            disabled={isBusy}
+            tone="danger"
+          />
+        ) : null}
+        {canComplete ? (
+          <ActionButton
+            icon={CheckCircle2}
+            label="Completar turno"
+            onClick={onComplete}
+            disabled={isBusy}
+          />
+        ) : null}
+        {canNoShow ? (
+          <ActionButton
+            icon={UserX}
+            label="Marcar no asistio"
+            onClick={onNoShow}
+            disabled={isBusy}
+            tone="danger"
+          />
+        ) : null}
+        {!canConfirm && !canReject && !canCancel && !canComplete && !canNoShow ? (
+          <p className="muted-copy">Este turno ya no tiene acciones disponibles.</p>
+        ) : null}
+      </div>
+    </AdminModal>
+  );
+}
+
+function DetailItem({
+  label,
+  value,
+  wide = false,
+}: {
+  label: string;
+  value: ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <div className={wide ? "detail-item is-wide" : "detail-item"}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function ActionButton({
+  disabled,
+  icon: Icon,
+  label,
+  onClick,
+  tone = "primary",
+}: {
+  disabled: boolean;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  tone?: "danger" | "primary";
+}) {
+  return (
+    <button
+      className={`appointment-detail-action tone-${tone}`}
+      disabled={disabled}
+      type="button"
+      onClick={onClick}
+    >
+      <Icon aria-hidden="true" size={16} />
+      {label}
+    </button>
+  );
+}
+
+function formatOptionalDate(value?: string | null) {
+  return value ? formatShortDateTime(value) : "No registrado";
 }
 
 function DashboardState({ label }: { label: string }) {

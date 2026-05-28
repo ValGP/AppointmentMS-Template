@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, History, Plus, Power, PowerOff } from "lucide-react";
+import { Edit3, History, Plus, Power, PowerOff, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatShortDateTime } from "../../../shared/utils/date";
+import { AdminActionsMenu } from "../components/AdminActionsMenu";
 import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
 import { AdminToast } from "../components/AdminToast";
@@ -69,6 +71,8 @@ export function AdminClientsPage() {
   const [statusTarget, setStatusTarget] = useState<Client | null>(null);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
   const [historyClient, setHistoryClient] = useState<Client | null>(null);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientSort, setClientSort] = useState("created-desc");
   const { showToast, toast } = useAdminToast();
 
   const clientsQuery = useQuery({
@@ -90,6 +94,30 @@ export function AdminClientsPage() {
   const clients = clientsQuery.data ?? [];
   const activeClients = clients.filter((client) => client.active);
   const inactiveClients = clients.filter((client) => !client.active);
+  const visibleClients = useMemo(() => {
+    const search = clientSearch.trim().toLowerCase();
+    const filteredClients = search
+      ? activeClients.filter((client) =>
+          [client.fullName, client.email, client.phone ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(search),
+        )
+      : activeClients;
+
+    return [...filteredClients].sort((a, b) => {
+      if (clientSort === "name-asc") {
+        return a.fullName.localeCompare(b.fullName);
+      }
+      if (clientSort === "name-desc") {
+        return b.fullName.localeCompare(a.fullName);
+      }
+      if (clientSort === "created-asc") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [activeClients, clientSearch, clientSort]);
   const activeCount = useMemo(
     () => activeClients.length,
     [activeClients.length],
@@ -290,15 +318,66 @@ export function AdminClientsPage() {
           </div>
         </div>
 
+        <div className="catalog-list-controls">
+          <label className="catalog-search-field">
+            <Search aria-hidden="true" size={16} />
+            <input
+              type="search"
+              placeholder="Buscar por nombre, email o telefono"
+              value={clientSearch}
+              onChange={(event) => setClientSearch(event.target.value)}
+            />
+          </label>
+          <label>
+            Orden
+            <select
+              value={clientSort}
+              onChange={(event) => setClientSort(event.target.value)}
+            >
+              <option value="created-desc">Ultimos creados</option>
+              <option value="created-asc">Primeros creados</option>
+              <option value="name-asc">Nombre A-Z</option>
+              <option value="name-desc">Nombre Z-A</option>
+            </select>
+          </label>
+        </div>
+
         {clientsQuery.isLoading ? <CatalogState label="Cargando clientes..." /> : null}
         {clientsQuery.isError ? (
           <CatalogState label="No se pudieron cargar los clientes." />
         ) : null}
         {!clientsQuery.isLoading && !clientsQuery.isError && activeClients.length === 0 ? (
-          <CatalogState label="No hay clientes activos cargados." />
+          <AdminEmptyState
+            label="No hay clientes activos cargados."
+            supportingText="Crea un cliente para poder asociarlo a turnos y consultar su historial."
+            action={
+              <button className="admin-primary-button" type="button" onClick={openCreateForm}>
+                <Plus aria-hidden="true" size={16} />
+                Crear cliente
+              </button>
+            }
+          />
+        ) : null}
+        {!clientsQuery.isLoading &&
+        !clientsQuery.isError &&
+        activeClients.length > 0 &&
+        visibleClients.length === 0 ? (
+          <AdminEmptyState
+            label="No hay clientes para esa busqueda."
+            supportingText="Revisa el texto buscado o limpia el filtro para volver al listado completo."
+            action={
+              <button
+                className="admin-soft-button"
+                type="button"
+                onClick={() => setClientSearch("")}
+              >
+                Limpiar busqueda
+              </button>
+            }
+          />
         ) : null}
 
-        {activeClients.length > 0 ? (
+        {visibleClients.length > 0 ? (
           <div className="catalog-table clients-table" role="table" aria-label="Clientes">
             <div className="catalog-table-head" role="row">
               <span>Cliente</span>
@@ -308,7 +387,7 @@ export function AdminClientsPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {activeClients.map((client) => (
+            {visibleClients.map((client) => (
               <div className="catalog-row" role="row" key={client.id}>
                 <div className="catalog-main-cell">
                   <strong>{client.fullName}</strong>
@@ -324,42 +403,30 @@ export function AdminClientsPage() {
                 >
                   {client.active ? "Activo" : "Inactivo"}
                 </span>
-                <div className="catalog-actions">
-                  <button
-                    className="icon-button"
-                    type="button"
-                    onClick={() => setHistoryClient(client)}
-                    aria-label={`Ver historial de ${client.fullName}`}
-                    title="Historial"
-                  >
-                    <History aria-hidden="true" size={16} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    onClick={() => openEditForm(client)}
-                    aria-label={`Editar ${client.fullName}`}
-                  >
-                    <Edit3 aria-hidden="true" size={16} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    disabled={statusMutation.isPending}
-                    onClick={() => setStatusTarget(client)}
-                    aria-label={
-                      client.active
-                        ? `Desactivar ${client.fullName}`
-                        : `Activar ${client.fullName}`
-                    }
-                  >
-                    {client.active ? (
-                      <PowerOff aria-hidden="true" size={16} />
-                    ) : (
-                      <Power aria-hidden="true" size={16} />
-                    )}
-                  </button>
-                </div>
+                <AdminActionsMenu
+                  label={`Acciones de ${client.fullName}`}
+                  items={[
+                    {
+                      icon: History,
+                      label: "Ver historial",
+                      onClick: () => setHistoryClient(client),
+                    },
+                    {
+                      icon: Edit3,
+                      label: "Editar cliente",
+                      onClick: () => openEditForm(client),
+                    },
+                    {
+                      disabled: statusMutation.isPending,
+                      icon: client.active ? PowerOff : Power,
+                      label: client.active
+                        ? "Desactivar cliente"
+                        : "Reactivar cliente",
+                      onClick: () => setStatusTarget(client),
+                      tone: client.active ? "danger" : "default",
+                    },
+                  ]}
+                />
               </div>
             ))}
           </div>

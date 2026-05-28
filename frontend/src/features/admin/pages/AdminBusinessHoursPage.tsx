@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit3, Plus, Power, PowerOff, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
+import { usePersistentState } from "../../../shared/hooks/usePersistentState";
+import { AdminActionsMenu } from "../components/AdminActionsMenu";
 import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
 import { AdminToast } from "../components/AdminToast";
@@ -45,7 +48,11 @@ export function AdminBusinessHoursPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [statusTarget, setStatusTarget] = useState<BusinessHours | null>(null);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
-  const [selectedProfessionalId, setSelectedProfessionalId] = useState(0);
+  const [hoursSort, setHoursSort] = useState("day-asc");
+  const [selectedProfessionalId, setSelectedProfessionalId] = usePersistentState(
+    "admin:business-hours:professionalId",
+    0,
+  );
   const { showToast, toast } = useAdminToast();
 
   const hoursQuery = useQuery({
@@ -71,6 +78,23 @@ export function AdminBusinessHoursPage() {
       : [];
   const activeHours = hoursForSelectedProfessional.filter((item) => item.active);
   const inactiveHours = hoursForSelectedProfessional.filter((item) => !item.active);
+  const visibleActiveHours = useMemo(() => {
+    const dayOrder = new Map(days.map((day, index) => [day.value, index]));
+
+    return [...activeHours].sort((a, b) => {
+      if (hoursSort === "time-asc") {
+        return a.startTime.localeCompare(b.startTime);
+      }
+      if (hoursSort === "time-desc") {
+        return b.startTime.localeCompare(a.startTime);
+      }
+
+      return (
+        (dayOrder.get(a.dayOfWeek) ?? 0) - (dayOrder.get(b.dayOfWeek) ?? 0) ||
+        a.startTime.localeCompare(b.startTime)
+      );
+    });
+  }, [activeHours, hoursSort]);
 
   const form = useForm<BusinessHoursFormValues>({
     defaultValues: {
@@ -284,8 +308,22 @@ export function AdminBusinessHoursPage() {
           </div>
         </div>
 
+        <div className="catalog-list-controls is-compact">
+          <label>
+            Orden
+            <select value={hoursSort} onChange={(event) => setHoursSort(event.target.value)}>
+              <option value="day-asc">Dia y hora</option>
+              <option value="time-asc">Hora inicio menor</option>
+              <option value="time-desc">Hora inicio mayor</option>
+            </select>
+          </label>
+        </div>
+
         {selectedProfessionalId === 0 ? (
-          <CatalogState label="Selecciona un profesional para ver sus horarios." />
+          <AdminEmptyState
+            label="Selecciona un profesional para ver sus horarios."
+            supportingText="Los horarios se gestionan por profesional para evitar listas mezcladas."
+          />
         ) : null}
         {hoursQuery.isLoading ? <CatalogState label="Cargando horarios..." /> : null}
         {hoursQuery.isError ? (
@@ -295,10 +333,19 @@ export function AdminBusinessHoursPage() {
         !hoursQuery.isLoading &&
         !hoursQuery.isError &&
         activeHours.length === 0 ? (
-          <CatalogState label="No hay horarios activos para este profesional." />
+          <AdminEmptyState
+            label="No hay horarios activos para este profesional."
+            supportingText="Crea un horario para que este profesional genere disponibilidad en Agenda."
+            action={
+              <button className="admin-primary-button" type="button" onClick={openCreateForm}>
+                <Plus aria-hidden="true" size={16} />
+                Crear horario
+              </button>
+            }
+          />
         ) : null}
 
-        {activeHours.length > 0 ? (
+        {visibleActiveHours.length > 0 ? (
           <div className="catalog-table business-hours-table">
             <div className="catalog-table-head">
               <span>Profesional</span>
@@ -307,7 +354,7 @@ export function AdminBusinessHoursPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {activeHours.map((item) => (
+            {visibleActiveHours.map((item) => (
               <div className="catalog-row" key={item.id}>
                 <div className="catalog-main-cell">
                   <strong>{item.professionalName}</strong>
@@ -388,20 +435,23 @@ function CatalogActions({
   onToggle: () => void;
 }) {
   return (
-    <div className="catalog-actions">
-      <button className="icon-button" type="button" onClick={onEdit} aria-label={`Editar ${label}`}>
-        <Edit3 aria-hidden="true" size={16} />
-      </button>
-      <button
-        className="icon-button"
-        type="button"
-        disabled={disabled}
-        onClick={onToggle}
-        aria-label={active ? `Desactivar ${label}` : `Activar ${label}`}
-      >
-        {active ? <PowerOff aria-hidden="true" size={16} /> : <Power aria-hidden="true" size={16} />}
-      </button>
-    </div>
+    <AdminActionsMenu
+      label={`Acciones de ${label}`}
+      items={[
+        {
+          icon: Edit3,
+          label: "Editar horario",
+          onClick: onEdit,
+        },
+        {
+          disabled,
+          icon: active ? PowerOff : Power,
+          label: active ? "Desactivar horario" : "Reactivar horario",
+          onClick: onToggle,
+          tone: active ? "danger" : "default",
+        },
+      ]}
+    />
   );
 }
 

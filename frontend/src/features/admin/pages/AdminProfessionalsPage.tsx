@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff } from "lucide-react";
+import { Edit3, Plus, Power, PowerOff, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
+import { getBusinessHours } from "../../business-hours/api/businessHoursApi";
+import { AdminActionsMenu } from "../components/AdminActionsMenu";
 import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminConflictBadge } from "../components/AdminConflictBadge";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
 import { AdminToast } from "../components/AdminToast";
@@ -44,6 +48,8 @@ export function AdminProfessionalsPage() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([]);
   const [statusTarget, setStatusTarget] = useState<Professional | null>(null);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const [professionalSearch, setProfessionalSearch] = useState("");
+  const [professionalSort, setProfessionalSort] = useState("name-asc");
   const { showToast, toast } = useAdminToast();
 
   const professionalsQuery = useQuery({
@@ -53,6 +59,10 @@ export function AdminProfessionalsPage() {
   const servicesQuery = useQuery({
     queryKey: ["services"],
     queryFn: () => getServices(),
+  });
+  const hoursQuery = useQuery({
+    queryKey: ["business-hours"],
+    queryFn: getBusinessHours,
   });
   const assignmentQuery = useQuery({
     queryKey: ["professional-services-assignment", editingProfessional?.id],
@@ -64,11 +74,45 @@ export function AdminProfessionalsPage() {
   const activeProfessionals = professionals.filter(
     (professional) => professional.active,
   );
+  const visibleProfessionals = useMemo(() => {
+    const search = professionalSearch.trim().toLowerCase();
+    const filteredProfessionals = search
+      ? activeProfessionals.filter((professional) =>
+          [
+            professional.fullName,
+            professional.email,
+            professional.phone ?? "",
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(search),
+        )
+      : activeProfessionals;
+
+    return [...filteredProfessionals].sort((a, b) => {
+      if (professionalSort === "email-asc") {
+        return a.email.localeCompare(b.email);
+      }
+      if (professionalSort === "name-desc") {
+        return b.fullName.localeCompare(a.fullName);
+      }
+      return a.fullName.localeCompare(b.fullName);
+    });
+  }, [activeProfessionals, professionalSearch, professionalSort]);
   const inactiveProfessionals = professionals.filter(
     (professional) => !professional.active,
   );
   const services = servicesQuery.data ?? [];
   const activeServices = services.filter((service) => service.active);
+  const activeHours = hoursQuery.data?.filter((item) => item.active) ?? [];
+  const professionalsWithoutHours = new Set(
+    activeProfessionals
+      .filter(
+        (professional) =>
+          !activeHours.some((item) => item.professionalId === professional.id),
+      )
+      .map((professional) => professional.id),
+  );
   const activeCount = useMemo(
     () => activeProfessionals.length,
     [activeProfessionals.length],
@@ -322,6 +366,29 @@ export function AdminProfessionalsPage() {
           </div>
         </div>
 
+        <div className="catalog-list-controls">
+          <label className="catalog-search-field">
+            <Search aria-hidden="true" size={16} />
+            <input
+              type="search"
+              placeholder="Buscar profesional"
+              value={professionalSearch}
+              onChange={(event) => setProfessionalSearch(event.target.value)}
+            />
+          </label>
+          <label>
+            Orden
+            <select
+              value={professionalSort}
+              onChange={(event) => setProfessionalSort(event.target.value)}
+            >
+              <option value="name-asc">Nombre A-Z</option>
+              <option value="name-desc">Nombre Z-A</option>
+              <option value="email-asc">Email A-Z</option>
+            </select>
+          </label>
+        </div>
+
         {professionalsQuery.isLoading ? (
           <CatalogState label="Cargando profesionales..." />
         ) : null}
@@ -331,10 +398,37 @@ export function AdminProfessionalsPage() {
         {!professionalsQuery.isLoading &&
         !professionalsQuery.isError &&
         activeProfessionals.length === 0 ? (
-          <CatalogState label="No hay profesionales activos cargados." />
+          <AdminEmptyState
+            label="No hay profesionales activos cargados."
+            supportingText="Crea un profesional para poder asignarle servicios, horarios y disponibilidad."
+            action={
+              <button className="admin-primary-button" type="button" onClick={openCreateForm}>
+                <Plus aria-hidden="true" size={16} />
+                Crear profesional
+              </button>
+            }
+          />
+        ) : null}
+        {!professionalsQuery.isLoading &&
+        !professionalsQuery.isError &&
+        activeProfessionals.length > 0 &&
+        visibleProfessionals.length === 0 ? (
+          <AdminEmptyState
+            label="No hay profesionales para esa busqueda."
+            supportingText="Limpia el buscador para volver al listado completo."
+            action={
+              <button
+                className="admin-soft-button"
+                type="button"
+                onClick={() => setProfessionalSearch("")}
+              >
+                Limpiar busqueda
+              </button>
+            }
+          />
         ) : null}
 
-        {activeProfessionals.length > 0 ? (
+        {visibleProfessionals.length > 0 ? (
           <div
             className="catalog-table professionals-table"
             role="table"
@@ -347,11 +441,14 @@ export function AdminProfessionalsPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {activeProfessionals.map((professional) => (
+            {visibleProfessionals.map((professional) => (
               <div className="catalog-row" role="row" key={professional.id}>
                 <div className="catalog-main-cell">
                   <strong>{professional.fullName}</strong>
                   <span>ID #{professional.id}</span>
+                  {professionalsWithoutHours.has(professional.id) ? (
+                    <AdminConflictBadge label="Sin horarios" />
+                  ) : null}
                 </div>
                 <span>{professional.email}</span>
                 <span>{professional.phone || "Sin telefono"}</span>
@@ -362,33 +459,25 @@ export function AdminProfessionalsPage() {
                 >
                   {professional.active ? "Activo" : "Inactivo"}
                 </span>
-                <div className="catalog-actions">
-                  <button
-                    className="icon-button"
-                    type="button"
-                    onClick={() => openEditForm(professional)}
-                    aria-label={`Editar ${professional.fullName}`}
-                  >
-                    <Edit3 aria-hidden="true" size={16} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    disabled={statusMutation.isPending}
-                    onClick={() => setStatusTarget(professional)}
-                    aria-label={
-                      professional.active
-                        ? `Desactivar ${professional.fullName}`
-                        : `Activar ${professional.fullName}`
-                    }
-                  >
-                    {professional.active ? (
-                      <PowerOff aria-hidden="true" size={16} />
-                    ) : (
-                      <Power aria-hidden="true" size={16} />
-                    )}
-                  </button>
-                </div>
+                <AdminActionsMenu
+                  label={`Acciones de ${professional.fullName}`}
+                  items={[
+                    {
+                      icon: Edit3,
+                      label: "Editar profesional",
+                      onClick: () => openEditForm(professional),
+                    },
+                    {
+                      disabled: statusMutation.isPending,
+                      icon: professional.active ? PowerOff : Power,
+                      label: professional.active
+                        ? "Desactivar profesional"
+                        : "Reactivar profesional",
+                      onClick: () => setStatusTarget(professional),
+                      tone: professional.active ? "danger" : "default",
+                    },
+                  ]}
+                />
               </div>
             ))}
           </div>

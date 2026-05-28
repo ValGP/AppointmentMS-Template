@@ -8,7 +8,6 @@ import {
   LogOut,
   Menu,
   Moon,
-  Search,
   Sparkles,
   Sun,
   UserRound,
@@ -115,14 +114,6 @@ export function AdminLayout() {
           </div>
 
           <div className="admin-header-actions">
-            <label className="admin-search">
-              <Search aria-hidden="true" size={17} />
-              <input
-                aria-label="Buscar turno, cliente o servicio"
-                placeholder="Buscar turno, cliente o servicio"
-              />
-            </label>
-
             <button
               className="icon-button"
               type="button"

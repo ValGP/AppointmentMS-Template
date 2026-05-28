@@ -1,0 +1,57 @@
+
+> bibe-frontend@0.0.0 dev
+> vite --host 127.0.0.1 --host 127.0.0.1
+
+
+  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m616[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m12:48:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/layouts/AdminLayout.tsx[22m
+[2m12:48:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m12:49:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminCalendarPage.tsx[22m
+[2m12:49:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminBusinessHoursPage.tsx[22m
+[2m12:55:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m12:55:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminServicesPage.tsx[22m
+[2m12:55:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminProfessionalsPage.tsx[22m
+[2m12:55:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminClientsPage.tsx[22m
+[2m12:55:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminBusinessHoursPage.tsx[22m
+[2m12:55:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAvailabilityBlocksPage.tsx[22m
+[2m12:57:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m12:57:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminCalendarPage.tsx[22m
+[2m12:57:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminDashboardPage.tsx[22m
+[2m13:05:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminCalendarPage.tsx[22m
+[2m13:05:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminCalendarPage.tsx[22m
+[2m13:09:45[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m13:10:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminDashboardPage.tsx[22m
+[2m13:10:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:10:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m13:16:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m13:17:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m13:17:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:17:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:17:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m13:18:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:27:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminClientsPage.tsx[22m
+[2m13:27:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminServicesPage.tsx[22m
+[2m13:27:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminProfessionalsPage.tsx[22m
+[2m13:28:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:28:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:28:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:28:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAppointmentsPage.tsx[22m
+[2m13:28:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:28:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminBusinessHoursPage.tsx[22m
+[2m13:29:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminBusinessHoursPage.tsx[22m
+[2m13:29:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAvailabilityBlocksPage.tsx[22m
+[2m13:29:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:37:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:37:50[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminProfessionalsPage.tsx[22m
+[2m13:38:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminServicesPage.tsx[22m
+[2m13:38:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminDashboardPage.tsx[22m
+[2m13:38:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:38:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:45:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/global.css[22m
+[2m13:45:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminServicesPage.tsx[22m
+[2m13:45:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminProfessionalsPage.tsx[22m
+[2m13:45:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminClientsPage.tsx[22m
+[2m13:45:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminBusinessHoursPage.tsx[22m
+[2m13:45:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/admin/pages/AdminAvailabilityBlocksPage.tsx[22m

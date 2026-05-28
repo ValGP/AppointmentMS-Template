@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
 import { ApiError } from "../../../shared/api/httpClient";
 import {
   addDays,
@@ -17,16 +18,27 @@ import {
   startOfWeek,
   toLocalDateTimeParam,
 } from "../../../shared/utils/date";
+import { usePersistentState } from "../../../shared/hooks/usePersistentState";
 import { getAppointments, createAppointment, type Appointment, type AppointmentPayload } from "../../appointments/api/appointmentsApi";
 import { getAvailability, type AvailabilitySlot } from "../../availability/api/availabilityApi";
-import { getClients } from "../../clients/api/clientsApi";
+import {
+  createClient,
+  getClients,
+  type ClientPayload,
+} from "../../clients/api/clientsApi";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
 import { getServices } from "../../services/api/servicesApi";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminToast } from "../components/AdminToast";
 import { useAdminToast } from "../hooks/useAdminToast";
 
 type AppointmentFormValues = {
   clientId: number;
+  clientMode: "existing" | "new";
+  newClientEmail: string;
+  newClientFullName: string;
+  newClientPassword: string;
+  newClientPhone: string;
   notes: string;
 };
 
@@ -82,9 +94,18 @@ function isActiveAppointment(appointment: Appointment) {
 
 export function AdminCalendarPage() {
   const queryClient = useQueryClient();
-  const [weekStart, setWeekStart] = useState(currentWeekStart);
-  const [professionalId, setProfessionalId] = useState<number>(0);
-  const [serviceId, setServiceId] = useState<number>(0);
+  const [weekStartKey, setWeekStartKey] = usePersistentState(
+    "admin:calendar:weekStart",
+    toDateKey(currentWeekStart),
+  );
+  const [professionalId, setProfessionalId] = usePersistentState<number>(
+    "admin:calendar:professionalId",
+    0,
+  );
+  const [serviceId, setServiceId] = usePersistentState<number>(
+    "admin:calendar:serviceId",
+    0,
+  );
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const { showToast, toast } = useAdminToast();
@@ -131,6 +152,10 @@ export function AdminCalendarPage() {
   );
   const selectedService = serviceOptions.find(
     (service) => service.id === selectedServiceId,
+  );
+  const weekStart = useMemo(
+    () => new Date(`${weekStartKey}T00:00:00`),
+    [weekStartKey],
   );
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
@@ -214,10 +239,17 @@ export function AdminCalendarPage() {
   const createForm = useForm<AppointmentFormValues>({
     defaultValues: {
       clientId: 0,
+      clientMode: "existing",
+      newClientEmail: "",
+      newClientFullName: "",
+      newClientPassword: "",
+      newClientPhone: "",
       notes: "",
     },
   });
+  const clientMode = createForm.watch("clientMode");
   const selectedClientId = createForm.watch("clientId");
+  const newClientFullName = createForm.watch("newClientFullName");
   const selectedClient = activeClients.find(
     (client) => client.id === Number(selectedClientId),
   );
@@ -240,16 +272,55 @@ export function AdminCalendarPage() {
       ),
   });
 
+  const createClientAndAppointmentMutation = useMutation({
+    mutationFn: async ({
+      client,
+      notes,
+    }: {
+      client: ClientPayload;
+      notes: string;
+    }) => {
+      const createdClient = await createClient(client);
+
+      await createAppointment({
+        clientId: createdClient.id,
+        professionalId: selectedProfessionalId,
+        serviceId: selectedServiceId,
+        startDateTime: selectedSlot!.startDateTime,
+        notes: notes.trim() || undefined,
+      });
+
+      return createdClient;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clients"] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-dashboard-appointments"] }),
+        queryClient.invalidateQueries({ queryKey: ["availability"] }),
+      ]);
+      closeSlotModal();
+      showToast("Cliente y turno creados.");
+    },
+    onError: (error) =>
+      setFormError(
+        error instanceof ApiError
+          ? error.message
+          : "No se pudo crear el cliente y el turno.",
+      ),
+  });
+
   function moveWeek(offset: number) {
-    setWeekStart((current) => addDays(current, offset * 7));
+    setWeekStartKey(toDateKey(addDays(weekStart, offset * 7)));
   }
 
   function resetWeek() {
-    setWeekStart(currentWeekStart);
+    setWeekStartKey(toDateKey(currentWeekStart));
   }
 
   function resetCalendarFilters() {
-    setWeekStart(currentWeekStart);
+    setWeekStartKey(toDateKey(currentWeekStart));
     setServiceId(0);
     setProfessionalId(0);
   }
@@ -264,6 +335,11 @@ export function AdminCalendarPage() {
     setFormError(null);
     createForm.reset({
       clientId: activeClients[0]?.id ?? 0,
+      clientMode: activeClients.length > 0 ? "existing" : "new",
+      newClientEmail: "",
+      newClientFullName: "",
+      newClientPassword: "",
+      newClientPhone: "",
       notes: "",
     });
   }
@@ -280,6 +356,20 @@ export function AdminCalendarPage() {
     }
 
     setFormError(null);
+
+    if (values.clientMode === "new") {
+      createClientAndAppointmentMutation.mutate({
+        client: {
+          email: values.newClientEmail.trim(),
+          fullName: values.newClientFullName.trim(),
+          password: values.newClientPassword.trim(),
+          phone: values.newClientPhone.trim() || undefined,
+        },
+        notes: values.notes,
+      });
+      return;
+    }
+
     createMutation.mutate({
       clientId: Number(values.clientId),
       professionalId: selectedProfessionalId,
@@ -307,6 +397,11 @@ export function AdminCalendarPage() {
     hasSelection: selectedProfessionalId > 0 && selectedServiceId > 0,
     professionalName: selectedProfessional?.fullName,
     serviceName: selectedService?.name,
+  });
+  const emptyStateAction = getCalendarEmptyStateAction({
+    hasActiveServices: allActiveServices.length > 0,
+    hasCompatibleProfessionals: professionalOptions.length > 0,
+    selectedServiceId,
   });
 
   return (
@@ -405,7 +500,11 @@ export function AdminCalendarPage() {
         </div>
 
         {emptyStateLabel && !isLoading && !hasError ? (
-          <CalendarState label={emptyStateLabel} />
+          <AdminEmptyState
+            label={emptyStateLabel}
+            supportingText="La agenda necesita un servicio y un profesional compatible antes de calcular horarios."
+            action={emptyStateAction}
+          />
         ) : null}
         {isLoading ? <CalendarState label="Calculando disponibilidad..." /> : null}
         {hasError ? (
@@ -416,8 +515,14 @@ export function AdminCalendarPage() {
         selectedProfessionalId > 0 &&
         selectedServiceId > 0 &&
         timeRows.length === 0 ? (
-          <CalendarState
-            label={`No hay horarios disponibles ni turnos ocupados para ${selectedProfessional?.fullName ?? "este profesional"} con ${selectedService?.name ?? "este servicio"} en esta semana. Revisa horarios laborales, bloqueos o turnos existentes.`}
+          <AdminEmptyState
+            label={`No hay horarios para ${selectedProfessional?.fullName ?? "este profesional"} con ${selectedService?.name ?? "este servicio"} en esta semana.`}
+            supportingText="Revisa horarios laborales, bloqueos, turnos ocupados o la relacion profesional-servicio."
+            action={
+              <Link className="admin-primary-button" to="/admin/business-hours">
+                Revisar horarios
+              </Link>
+            }
           />
         ) : null}
 
@@ -499,7 +604,11 @@ export function AdminCalendarPage() {
           <div className="appointment-create-summary">
             <div>
               <span>Cliente</span>
-              <strong>{selectedClient?.fullName ?? "Seleccionar cliente"}</strong>
+              <strong>
+                {clientMode === "new"
+                  ? newClientFullName || "Nuevo cliente"
+                  : selectedClient?.fullName ?? "Seleccionar cliente"}
+              </strong>
             </div>
             <div>
               <span>Servicio</span>
@@ -519,13 +628,37 @@ export function AdminCalendarPage() {
             </div>
           </div>
           <form className="admin-form-grid" onSubmit={createForm.handleSubmit(createFromSlot)}>
+            <div className="appointment-client-mode form-span-2">
+              <div className="segmented-control" role="group" aria-label="Tipo de cliente">
+                <button
+                  type="button"
+                  className={clientMode === "existing" ? "active" : ""}
+                  onClick={() => createForm.setValue("clientMode", "existing")}
+                  disabled={activeClients.length === 0}
+                >
+                  Cliente existente
+                </button>
+                <button
+                  type="button"
+                  className={clientMode === "new" ? "active" : ""}
+                  onClick={() => createForm.setValue("clientMode", "new")}
+                >
+                  Nuevo cliente
+                </button>
+              </div>
+            </div>
+            {clientMode === "existing" ? (
             <label className="form-span-2">
               Cliente
               <select
                 {...createForm.register("clientId", {
-                  required: "Selecciona un cliente.",
                   valueAsNumber: true,
-                  min: { value: 1, message: "Selecciona un cliente." },
+                  validate: (value) => {
+                    if (clientMode !== "existing") {
+                      return true;
+                    }
+                    return Number(value) > 0 || "Selecciona un cliente.";
+                  },
                 })}
               >
                 <option value={0}>Seleccionar</option>
@@ -537,6 +670,83 @@ export function AdminCalendarPage() {
               </select>
               <FieldError message={createForm.formState.errors.clientId?.message} />
             </label>
+            ) : (
+              <>
+                <label>
+                  Nombre completo
+                  <input
+                    {...createForm.register("newClientFullName", {
+                      required:
+                        clientMode === "new" ? "Ingresa el nombre." : false,
+                      maxLength: {
+                        value: 120,
+                        message: "Maximo 120 caracteres.",
+                      },
+                    })}
+                  />
+                  <FieldError
+                    message={createForm.formState.errors.newClientFullName?.message}
+                  />
+                </label>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    {...createForm.register("newClientEmail", {
+                      required:
+                        clientMode === "new" ? "Ingresa el email." : false,
+                      maxLength: {
+                        value: 160,
+                        message: "Maximo 160 caracteres.",
+                      },
+                    })}
+                  />
+                  <FieldError
+                    message={createForm.formState.errors.newClientEmail?.message}
+                  />
+                </label>
+                <label>
+                  Telefono
+                  <input
+                    {...createForm.register("newClientPhone", {
+                      maxLength: {
+                        value: 40,
+                        message: "Maximo 40 caracteres.",
+                      },
+                    })}
+                  />
+                  <FieldError
+                    message={createForm.formState.errors.newClientPhone?.message}
+                  />
+                </label>
+                <label>
+                  Password
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    {...createForm.register("newClientPassword", {
+                      required:
+                        clientMode === "new" ? "Ingresa una password." : false,
+                      validate: (value) => {
+                        if (clientMode !== "new") {
+                          return true;
+                        }
+                        if (value.length < 8) {
+                          return "Minimo 8 caracteres.";
+                        }
+                        if (value.length > 100) {
+                          return "Maximo 100 caracteres.";
+                        }
+                        return true;
+                      },
+                    })}
+                  />
+                  <FieldError
+                    message={createForm.formState.errors.newClientPassword?.message}
+                  />
+                </label>
+              </>
+            )}
             <label className="form-span-2">
               Notas
               <textarea
@@ -558,9 +768,15 @@ export function AdminCalendarPage() {
               <button
                 className="admin-primary-button"
                 type="submit"
-                disabled={createMutation.isPending}
+                disabled={
+                  createMutation.isPending ||
+                  createClientAndAppointmentMutation.isPending
+                }
               >
-                {createMutation.isPending ? "Creando..." : "Crear turno"}
+                {createMutation.isPending ||
+                createClientAndAppointmentMutation.isPending
+                  ? "Creando..."
+                  : "Crear turno"}
               </button>
             </div>
           </form>
@@ -661,6 +877,34 @@ function getCalendarEmptyStateLabel({
 
   if (!hasSelection) {
     return "Selecciona un servicio y un profesional compatible para revisar disponibilidad.";
+  }
+
+  return null;
+}
+
+function getCalendarEmptyStateAction({
+  hasActiveServices,
+  hasCompatibleProfessionals,
+  selectedServiceId,
+}: {
+  hasActiveServices: boolean;
+  hasCompatibleProfessionals: boolean;
+  selectedServiceId: number;
+}) {
+  if (!hasActiveServices) {
+    return (
+      <Link className="admin-primary-button" to="/admin/services">
+        Crear servicio
+      </Link>
+    );
+  }
+
+  if (selectedServiceId > 0 && !hasCompatibleProfessionals) {
+    return (
+      <Link className="admin-primary-button" to="/admin/professionals">
+        Revisar profesionales
+      </Link>
+    );
   }
 
   return null;

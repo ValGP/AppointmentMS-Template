@@ -1,10 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Plus, Power, PowerOff } from "lucide-react";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Edit3, Plus, Power, PowerOff, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatCurrency } from "../../../shared/utils/format";
+import { AdminActionsMenu } from "../components/AdminActionsMenu";
 import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminConflictBadge } from "../components/AdminConflictBadge";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
 import { AdminToast } from "../components/AdminToast";
@@ -50,6 +53,8 @@ export function AdminServicesPage() {
   );
   const [statusTarget, setStatusTarget] = useState<ServiceCatalogItem | null>(null);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
+  const [serviceSort, setServiceSort] = useState("name-asc");
   const { showToast, toast } = useAdminToast();
 
   const servicesQuery = useQuery({
@@ -69,9 +74,51 @@ export function AdminServicesPage() {
   const services = servicesQuery.data ?? [];
   const activeServices = services.filter((service) => service.active);
   const inactiveServices = services.filter((service) => !service.active);
+  const visibleServices = useMemo(() => {
+    const search = serviceSearch.trim().toLowerCase();
+    const filteredServices = search
+      ? activeServices.filter((service) =>
+          [service.name, service.description ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(search),
+        )
+      : activeServices;
+
+    return [...filteredServices].sort((a, b) => {
+      if (serviceSort === "duration-asc") {
+        return a.durationMinutes - b.durationMinutes;
+      }
+      if (serviceSort === "duration-desc") {
+        return b.durationMinutes - a.durationMinutes;
+      }
+      if (serviceSort === "name-desc") {
+        return b.name.localeCompare(a.name);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [activeServices, serviceSearch, serviceSort]);
   const professionals = professionalsQuery.data ?? [];
   const activeProfessionals = professionals.filter(
     (professional) => professional.active,
+  );
+  const serviceProfessionalQueries = useQueries({
+    queries: activeServices.map((service) => ({
+      queryKey: ["professionals", "compatible-service", service.id],
+      queryFn: () => getProfessionals({ serviceId: service.id }),
+    })),
+  });
+  const servicesWithoutProfessionals = new Set(
+    activeServices
+      .filter((service, index) => {
+        const compatibleProfessionals = serviceProfessionalQueries[index]?.data ?? [];
+        return (
+          serviceProfessionalQueries[index]?.isSuccess &&
+          compatibleProfessionals.filter((professional) => professional.active)
+            .length === 0
+        );
+      })
+      .map((service) => service.id),
   );
   const activeCount = useMemo(() => activeServices.length, [activeServices.length]);
 
@@ -345,6 +392,30 @@ export function AdminServicesPage() {
           </div>
         </div>
 
+        <div className="catalog-list-controls">
+          <label className="catalog-search-field">
+            <Search aria-hidden="true" size={16} />
+            <input
+              type="search"
+              placeholder="Buscar servicio"
+              value={serviceSearch}
+              onChange={(event) => setServiceSearch(event.target.value)}
+            />
+          </label>
+          <label>
+            Orden
+            <select
+              value={serviceSort}
+              onChange={(event) => setServiceSort(event.target.value)}
+            >
+              <option value="name-asc">Nombre A-Z</option>
+              <option value="name-desc">Nombre Z-A</option>
+              <option value="duration-asc">Duracion menor</option>
+              <option value="duration-desc">Duracion mayor</option>
+            </select>
+          </label>
+        </div>
+
         {servicesQuery.isLoading ? (
           <CatalogState label="Cargando servicios..." />
         ) : null}
@@ -354,10 +425,37 @@ export function AdminServicesPage() {
         {!servicesQuery.isLoading &&
         !servicesQuery.isError &&
         activeServices.length === 0 ? (
-          <CatalogState label="No hay servicios activos cargados." />
+          <AdminEmptyState
+            label="No hay servicios activos cargados."
+            supportingText="Crea un servicio para que pueda aparecer en Agenda y en la creacion de turnos."
+            action={
+              <button className="admin-primary-button" type="button" onClick={openCreateForm}>
+                <Plus aria-hidden="true" size={16} />
+                Crear servicio
+              </button>
+            }
+          />
+        ) : null}
+        {!servicesQuery.isLoading &&
+        !servicesQuery.isError &&
+        activeServices.length > 0 &&
+        visibleServices.length === 0 ? (
+          <AdminEmptyState
+            label="No hay servicios para esa busqueda."
+            supportingText="Limpia el buscador para volver al listado completo."
+            action={
+              <button
+                className="admin-soft-button"
+                type="button"
+                onClick={() => setServiceSearch("")}
+              >
+                Limpiar busqueda
+              </button>
+            }
+          />
         ) : null}
 
-        {activeServices.length > 0 ? (
+        {visibleServices.length > 0 ? (
           <div className="catalog-table" role="table" aria-label="Servicios">
             <div className="catalog-table-head" role="row">
               <span>Servicio</span>
@@ -366,11 +464,14 @@ export function AdminServicesPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {activeServices.map((service) => (
+            {visibleServices.map((service) => (
               <div className="catalog-row" role="row" key={service.id}>
                 <div className="catalog-main-cell">
                   <strong>{service.name}</strong>
                   <span>{service.description || "Sin descripcion"}</span>
+                  {servicesWithoutProfessionals.has(service.id) ? (
+                    <AdminConflictBadge label="Sin profesionales" tone="danger" />
+                  ) : null}
                 </div>
                 <span>{service.durationMinutes} min</span>
                 <span>{formatCurrency(service.price)}</span>
@@ -381,33 +482,25 @@ export function AdminServicesPage() {
                 >
                   {service.active ? "Activo" : "Inactivo"}
                 </span>
-                <div className="catalog-actions">
-                  <button
-                    className="icon-button"
-                    type="button"
-                    onClick={() => openEditForm(service)}
-                    aria-label={`Editar ${service.name}`}
-                  >
-                    <Edit3 aria-hidden="true" size={16} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    disabled={statusMutation.isPending}
-                    onClick={() => setStatusTarget(service)}
-                    aria-label={
-                      service.active
-                        ? `Desactivar ${service.name}`
-                        : `Activar ${service.name}`
-                    }
-                  >
-                    {service.active ? (
-                      <PowerOff aria-hidden="true" size={16} />
-                    ) : (
-                      <Power aria-hidden="true" size={16} />
-                    )}
-                  </button>
-                </div>
+                <AdminActionsMenu
+                  label={`Acciones de ${service.name}`}
+                  items={[
+                    {
+                      icon: Edit3,
+                      label: "Editar servicio",
+                      onClick: () => openEditForm(service),
+                    },
+                    {
+                      disabled: statusMutation.isPending,
+                      icon: service.active ? PowerOff : Power,
+                      label: service.active
+                        ? "Desactivar servicio"
+                        : "Reactivar servicio",
+                      onClick: () => setStatusTarget(service),
+                      tone: service.active ? "danger" : "default",
+                    },
+                  ]}
+                />
               </div>
             ))}
           </div>

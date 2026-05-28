@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit3, Plus, Power, PowerOff } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiError } from "../../../shared/api/httpClient";
 import { formatShortDateTime } from "../../../shared/utils/date";
+import { AdminActionsMenu } from "../components/AdminActionsMenu";
 import { AdminConfirmDialog } from "../components/AdminConfirmDialog";
+import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminInactiveItemsModal } from "../components/AdminInactiveItemsModal";
 import { AdminModal } from "../components/AdminModal";
 import { AdminToast } from "../components/AdminToast";
@@ -51,6 +53,7 @@ export function AdminAvailabilityBlocksPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [statusTarget, setStatusTarget] = useState<AvailabilityBlock | null>(null);
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
+  const [blockSort, setBlockSort] = useState("start-desc");
   const { showToast, toast } = useAdminToast();
 
   const blocksQuery = useQuery({
@@ -65,6 +68,23 @@ export function AdminAvailabilityBlocksPage() {
   const blocks = blocksQuery.data ?? [];
   const activeBlocks = blocks.filter((item) => item.active);
   const inactiveBlocks = blocks.filter((item) => !item.active);
+  const visibleActiveBlocks = useMemo(() => {
+    return [...activeBlocks].sort((a, b) => {
+      if (blockSort === "professional-asc") {
+        return a.professionalName.localeCompare(b.professionalName);
+      }
+      if (blockSort === "start-asc") {
+        return (
+          new Date(a.startDateTime).getTime() -
+          new Date(b.startDateTime).getTime()
+        );
+      }
+      return (
+        new Date(b.startDateTime).getTime() -
+        new Date(a.startDateTime).getTime()
+      );
+    });
+  }, [activeBlocks, blockSort]);
   const professionals = professionalsQuery.data ?? [];
 
   const form = useForm<AvailabilityBlockFormValues>({
@@ -274,13 +294,38 @@ export function AdminAvailabilityBlocksPage() {
           </div>
         </div>
 
+        <div className="catalog-list-controls is-compact">
+          <label>
+            Orden
+            <select value={blockSort} onChange={(event) => setBlockSort(event.target.value)}>
+              <option value="start-desc">Inicio mas reciente</option>
+              <option value="start-asc">Inicio mas antiguo</option>
+              <option value="professional-asc">Profesional A-Z</option>
+            </select>
+          </label>
+        </div>
+
         {blocksQuery.isLoading ? <CatalogState label="Cargando bloqueos..." /> : null}
         {blocksQuery.isError ? <CatalogState label="No se pudieron cargar los bloqueos." /> : null}
         {!blocksQuery.isLoading && !blocksQuery.isError && activeBlocks.length === 0 ? (
-          <CatalogState label="No hay bloqueos activos cargados." />
+          <AdminEmptyState
+            label="No hay bloqueos activos cargados."
+            supportingText="Crea bloqueos para vacaciones, licencias, feriados o excepciones de agenda."
+            action={
+              <button
+                className="admin-primary-button"
+                type="button"
+                onClick={openCreateForm}
+                disabled={professionals.length === 0}
+              >
+                <Plus aria-hidden="true" size={16} />
+                Crear bloqueo
+              </button>
+            }
+          />
         ) : null}
 
-        {activeBlocks.length > 0 ? (
+        {visibleActiveBlocks.length > 0 ? (
           <div className="catalog-table availability-blocks-table">
             <div className="catalog-table-head">
               <span>Profesional</span>
@@ -290,7 +335,7 @@ export function AdminAvailabilityBlocksPage() {
               <span>Estado</span>
               <span>Acciones</span>
             </div>
-            {activeBlocks.map((item) => (
+            {visibleActiveBlocks.map((item) => (
               <div className="catalog-row" key={item.id}>
                 <div className="catalog-main-cell">
                   <strong>{item.professionalName}</strong>
@@ -302,20 +347,25 @@ export function AdminAvailabilityBlocksPage() {
                 <span className={`status-badge tone-${item.active ? "success" : "muted"}`}>
                   {item.active ? "Activo" : "Inactivo"}
                 </span>
-                <div className="catalog-actions">
-                  <button className="icon-button" type="button" onClick={() => openEditForm(item)} aria-label={`Editar bloqueo ${item.id}`}>
-                    <Edit3 aria-hidden="true" size={16} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    disabled={statusMutation.isPending}
-                    onClick={() => setStatusTarget(item)}
-                    aria-label={item.active ? `Desactivar bloqueo ${item.id}` : `Activar bloqueo ${item.id}`}
-                  >
-                    {item.active ? <PowerOff aria-hidden="true" size={16} /> : <Power aria-hidden="true" size={16} />}
-                  </button>
-                </div>
+                <AdminActionsMenu
+                  label={`Acciones de bloqueo ${item.id}`}
+                  items={[
+                    {
+                      icon: Edit3,
+                      label: "Editar bloqueo",
+                      onClick: () => openEditForm(item),
+                    },
+                    {
+                      disabled: statusMutation.isPending,
+                      icon: item.active ? PowerOff : Power,
+                      label: item.active
+                        ? "Desactivar bloqueo"
+                        : "Reactivar bloqueo",
+                      onClick: () => setStatusTarget(item),
+                      tone: item.active ? "danger" : "default",
+                    },
+                  ]}
+                />
               </div>
             ))}
           </div>

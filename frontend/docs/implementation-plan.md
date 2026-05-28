@@ -780,6 +780,326 @@ Orden recomendado:
 4. Fase 4.3.4, porque mejora una zona puntual que hoy se vuelve dificil de leer.
 5. Fase 4.3.5, porque suma mucho valor operativo pero depende menos del flujo principal.
 
+### Fase 4.4 - Pulido operativo avanzado del admin
+
+Objetivo:
+
+Hacer que el panel admin sea mas rapido, claro y orientado al trabajo diario. Esta fase agrupa mejoras de UX detectadas despues de usar el panel completo.
+
+#### Fase 4.4.1 - Limpieza de header y filtros persistentes
+
+Estado:
+
+- Cerrada. Se saco el buscador global del header y se persisten los filtros operativos existentes por pantalla.
+
+Alcance:
+
+- Guardar filtros por pantalla mientras el admin navega. Implementado para pantallas con filtros ya existentes.
+- Persistir filtros operativos en:
+  - Turnos. Implementado: fechas, estado, cliente, profesional y pagina.
+  - Agenda. Implementado: servicio, profesional y semana.
+  - Horarios. Implementado: profesional seleccionado.
+  - Clientes. Sin filtros implementados todavia; la busqueda contextual queda para 4.4.6.
+  - Servicios. Sin filtros implementados todavia; ordenamiento/listado queda para 4.4.6.
+  - Profesionales. Sin filtros implementados todavia; ordenamiento/listado queda para 4.4.6.
+  - Bloqueos. Sin filtros implementados todavia; ordenamiento/listado queda para 4.4.6.
+- Sacar el buscador global del header porque hoy no aporta valor claro y puede confundir. Implementado.
+- Mantener busquedas solo cuando sean contextuales por pantalla.
+
+Salida esperada:
+
+- El admin no pierde contexto al moverse entre pantallas.
+- El header queda mas limpio.
+
+#### Fase 4.4.2 - Estados vacios accionables
+
+Estado: cerrada.
+
+Alcance:
+
+- Reemplazar estados vacios genericos por mensajes con siguiente accion.
+- Ejemplos:
+  - Sin servicios: boton `Crear servicio`. Implementado.
+  - Sin profesionales: boton `Crear profesional`. Implementado.
+  - Sin clientes: boton `Crear cliente`. Implementado.
+  - Sin horarios para profesional: boton `Crear horario`. Implementado.
+  - Sin disponibilidad: sugerir revisar horarios, bloqueos o relacion profesional-servicio. Implementado.
+  - Sin turnos: sugerir revisar Agenda o crear turno desde disponibilidad. Implementado.
+
+Salida esperada:
+
+- Cuando falta informacion, el admin sabe que hacer sin adivinar. Implementado.
+
+#### Fase 4.4.3 - Crear cliente desde creacion de turno admin
+
+Estado: cerrada.
+
+Alcance:
+
+- En el modal de crear turno desde Agenda, agregar opcion `Nuevo cliente`. Implementado.
+- Al elegir esa opcion, mostrar el formulario de creacion de cliente dentro del mismo flujo. Implementado.
+- Despues de crear el cliente:
+  - seleccionarlo automaticamente. Implementado dentro del flujo de creacion.
+  - continuar con la creacion del turno. Implementado: crea cliente y turno en una sola accion.
+- Reutilizar validaciones actuales de cliente. Implementado.
+- Mostrar feedback si el cliente se crea correctamente. Implementado con toast `Cliente y turno creados`.
+
+Salida esperada:
+
+- Si alguien llama o escribe y todavia no existe como cliente, el admin puede cargarlo sin salir de Agenda. Implementado.
+
+#### Fase 4.4.4 - Dashboard mas operativo
+
+Estado: cerrada.
+
+Alcance:
+
+- Hacer que las cards del dashboard sean navegables. Implementado.
+- Ejemplos:
+  - `Pendientes` abre Turnos filtrado por pendientes. Implementado para semana actual y proxima.
+  - `Confirmados` abre turnos confirmados de hoy o de la semana. Implementado para confirmados de hoy.
+  - `Completados` abre turnos completados/historial. Implementado para semana actual y proxima.
+  - `Proximo turno` abre detalle del turno. Implementado como acceso a Turnos filtrado por cliente, estado y fecha hasta que exista modal de detalle en 4.4.5.
+- Revisar que el dashboard funcione como entrada real de trabajo y no solo como resumen. Implementado con links filtrados, acciones rapidas y lectura de parametros URL en Turnos.
+
+Salida esperada:
+
+- El dashboard permite actuar rapidamente sobre lo mas importante del dia. Implementado.
+
+#### Fase 4.4.5 - Rediseno de Turnos y detalle operativo
+
+Estado: cerrada.
+
+Alcance:
+
+- Revisar visualmente la seccion Turnos porque hoy no termina de convencer como herramienta diaria. Implementado.
+- Explorar una estructura por pestañas o segmentos:
+  - `Pendientes`. Implementado.
+  - `Confirmados`. Implementado.
+  - `Cerrados`. Implementado como accesos operativos a completados/cancelados desde filtros rápidos.
+  - `Todos`. Implementado.
+- Mejorar el listado por dia para lectura rapida. Implementado reduciendo acciones inline y dejando un acceso `Ver detalle`.
+- Abrir un modal de detalle al tocar un turno. Implementado.
+- El modal debe mostrar toda la informacion del turno:
+  - cliente. Implementado.
+  - profesional. Implementado.
+  - servicio. Implementado.
+  - fecha y horario. Implementado.
+  - estado. Implementado.
+  - notas. Implementado.
+  - motivo de rechazo/cancelacion si existe. Implementado.
+  - fechas de confirmacion, cancelacion, completado o no-show si existen. Implementado.
+- Las acciones del turno deben estar dentro del modal, bien descritas con icono + texto:
+  - `Confirmar turno`. Implementado.
+  - `Rechazar turno`. Implementado.
+  - `Cancelar turno`. Implementado.
+  - `Completar turno`. Implementado.
+  - `Marcar no asistio`. Implementado.
+- Mantener confirmaciones antes de ejecutar cada accion. Implementado.
+
+Salida esperada:
+
+- Turnos se vuelve una vista de operacion clara, con detalle y acciones menos ambiguas. Implementado.
+
+#### Fase 4.4.6 - Busqueda, filtros y ordenamiento en listas
+
+Estado: cerrada.
+
+Alcance:
+
+- Agregar ordenamiento en listados principales. Implementado.
+- Prioridad:
+  - Clientes: nombre y fecha de alta. Implementado.
+  - Servicios: nombre y duracion. Implementado.
+  - Profesionales: nombre. Implementado.
+  - Turnos: fecha, estado, cliente/profesional. Implementado como orden seleccionable.
+  - Horarios: dia y hora de inicio. Implementado.
+  - Bloqueos: fecha de inicio y profesional. Implementado.
+- En Clientes, agregar buscador contextual por:
+  - nombre. Implementado.
+  - email. Implementado.
+  - telefono si aplica. Implementado.
+- En Clientes, agregar filtro/orden de `ultimos clientes creados`. Implementado.
+- Mantener la busqueda de clientes dentro de la pestana Clientes, no como busqueda global. Implementado.
+- Mostrar claramente el criterio de orden/filtro activo. Implementado con controles visibles por pantalla.
+
+Salida esperada:
+
+- El admin encuentra clientes y entidades rapido sin depender del scroll. Implementado.
+
+#### Fase 4.4.7 - Badges de conflicto/configuracion incompleta
+
+Estado: cerrada.
+
+Alcance:
+
+- Mostrar alertas o badges cuando falte configuracion operativa. Implementado.
+- Ejemplos:
+  - Profesional sin horarios activos. Implementado en Profesionales y Dashboard.
+  - Servicio sin profesionales compatibles. Implementado en Servicios y Dashboard.
+  - Profesional sin servicios asignados si esta en modo especifico.
+  - Cliente sin turnos.
+  - Servicio inactivo.
+  - Profesional inactivo.
+- Usar estos indicadores en dashboard y listados donde sumen claridad. Implementado para alertas que afectan disponibilidad.
+
+Salida esperada:
+
+- El panel ayuda a detectar problemas de configuracion antes de que afecten la agenda. Implementado.
+
+#### Fase 4.4.8 - Menu de acciones en mobile y listados
+
+Estado: cerrada.
+
+Alcance:
+
+- Reemplazar grupos de iconos sueltos por un menu de acciones cuando haya varias acciones. Implementado.
+- Cada accion debe mostrar icono + texto. Implementado.
+- Acciones esperadas segun pantalla:
+  - Editar. Implementado.
+  - Desactivar. Implementado.
+  - Reactivar. Implementado.
+  - Ver historial. Implementado en Clientes.
+  - Ver detalle. Ya implementado en Turnos con boton claro.
+  - Confirmar. Ya implementado en detalle de Turnos con icono + texto.
+  - Cancelar. Ya implementado en detalle de Turnos con icono + texto.
+- Priorizar mobile, pero evaluar si tambien mejora desktop. Implementado en mobile y desktop para consistencia.
+
+Salida esperada:
+
+- Las acciones son mas faciles de entender y se reducen toques accidentales. Implementado.
+
+Orden recomendado:
+
+1. Fase 4.4.1, porque limpia header y sienta base de filtros.
+2. Fase 4.4.2, porque mejora todas las pantallas sin cambiar reglas de negocio.
+3. Fase 4.4.3, porque mejora mucho el flujo real de mostrador al crear turnos.
+4. Fase 4.4.4, porque convierte el dashboard en entrada operativa.
+5. Fase 4.4.5, porque Turnos necesita una decision visual mas grande.
+6. Fase 4.4.6, porque busqueda/ordenamiento vuelve mas escalable el admin.
+7. Fase 4.4.7, porque agrega inteligencia operativa sobre la configuracion.
+8. Fase 4.4.8, porque pule la interaccion y especialmente mobile.
+
+### Fase 4.5 - Correcciones UX post-prueba del admin
+
+Objetivo:
+
+Resolver problemas detectados al usar el panel admin como flujo real, antes de pasar al flujo cliente. Esta fase prioriza claridad, prevencion de acciones accidentales y consistencia de filtros/modales.
+
+#### Fase 4.5.1 - Seguridad de sesion y confirmaciones
+
+Problemas detectados:
+
+- El boton `Cerrar sesion` no pide confirmacion.
+
+Recomendacion:
+
+- Agregar modal de confirmacion antes de cerrar sesion.
+- Texto sugerido: `Vas a cerrar la sesion actual.`
+- Mantener botones claros: `Volver` y `Cerrar sesion`.
+
+Salida esperada:
+
+- Se evitan cierres accidentales de sesion.
+
+#### Fase 4.5.2 - Busquedas, campos y limpieza visual
+
+Problemas detectados:
+
+- Profesionales y Servicios tambien deberian tener buscador.
+- Se solapa la lupita del buscador con el placeholder/texto.
+- Hay que ordenar mejor los campos cuando se crea turno desde Agenda con opcion `Nuevo cliente`.
+
+Estado actual:
+
+- Servicios y Profesionales ya tienen buscador en 4.4.6, pero necesitan revision visual fina.
+
+Recomendacion:
+
+- Revisar padding interno de inputs con icono para que la lupa no pise texto.
+- Mantener buscadores contextuales en Servicios, Profesionales y Clientes.
+- En el modal de crear turno desde Agenda, ordenar `Nuevo cliente` como:
+  1. Nombre completo.
+  2. Telefono.
+  3. Email.
+  4. Password.
+  5. Notas del turno.
+- Mantener el resumen superior del turno visible antes del formulario.
+
+Salida esperada:
+
+- Los formularios se leen de forma natural y los buscadores no generan ruido visual.
+
+#### Fase 4.5.3 - Turnos: filtros, rangos y orden
+
+Problemas detectados:
+
+- El boton del dashboard para ver todos los turnos no reinicia el filtro de estado.
+- No queda claro que hace `Ver turnos de la ventana`.
+- El filtro/orden en Turnos no funciona correctamente.
+- No queda claro el boton para reiniciar filtros en Turnos.
+- Deberian existir tres botones claros:
+  - `Semana actual + proxima`.
+  - `Semana actual`.
+  - `Proxima semana`.
+
+Recomendacion:
+
+- Reemplazar `Ver turnos de la ventana` por un texto mas explicito, por ejemplo `Ver semana actual y proxima`.
+- Cuando el Dashboard abre `Total ventana`, enviar explicitamente `status=` vacio o hacer que Turnos limpie estado al no recibir `status`.
+- En Turnos, separar controles:
+  - Grupo de rango rapido: `Semana actual`, `Proxima semana`, `Semana actual + proxima`.
+  - Boton secundario: `Limpiar filtros`.
+  - Selector de orden visible y validado.
+- Verificar si el backend soporta todos los `sort` usados. Si un sort no es confiable, hacer orden local o limitar opciones.
+
+Salida esperada:
+
+- Turnos permite cambiar rango, filtros y orden sin estados viejos escondidos.
+
+#### Fase 4.5.4 - Modales encadenados de Turnos
+
+Problemas detectados:
+
+- Cuando desde el detalle de turno se abre una confirmacion y se toca `Volver` o se cierra, tambien se cierra el modal del turno.
+- El modal del turno deberia quedar abierto para elegir otra accion.
+
+Recomendacion:
+
+- Mantener `selectedAppointment` abierto cuando se abre una confirmacion.
+- Abrir `AdminConfirmDialog` por encima usando `stack="top"`.
+- Al confirmar exitosamente, cerrar confirmacion y detalle.
+- Al cancelar confirmacion, cerrar solo confirmacion y volver al detalle.
+- Para rechazo/cancelacion con motivo, usar el mismo criterio: modal de motivo encima del detalle, sin cerrar el detalle al volver.
+
+Salida esperada:
+
+- El admin puede abrir una accion, arrepentirse y seguir viendo el mismo turno.
+
+#### Fase 4.5.5 - Menu de acciones unico
+
+Problemas detectados:
+
+- Se pueden abrir varios menus de tres puntos a la vez y la pantalla queda contaminada.
+
+Recomendacion:
+
+- Convertir `AdminActionsMenu` en menu controlado con un identificador abierto global por pantalla o por contexto.
+- Alternativa simple: usar un listener global de click/focus y cerrar otros menus al abrir uno nuevo.
+- Preferencia: crear hook `useSingleOpenMenu` o usar estado en el componente menu con evento custom para cerrar otros menus.
+
+Salida esperada:
+
+- Solo un menu de acciones queda abierto por vez.
+
+Orden recomendado:
+
+1. Fase 4.5.3, porque afecta navegacion central de Turnos y Dashboard.
+2. Fase 4.5.4, porque evita perder contexto durante acciones importantes.
+3. Fase 4.5.5, porque limpia la interaccion de listados.
+4. Fase 4.5.2, porque pule lectura visual y formulario de nuevo cliente.
+5. Fase 4.5.1, porque es pequeno pero importante para prevenir errores.
+
 ### Fase 5 - Flujo cliente para solicitar turno
 
 Objetivo:
