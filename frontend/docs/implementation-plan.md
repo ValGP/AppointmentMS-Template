@@ -1032,30 +1032,32 @@ Salida esperada:
 
 #### Fase 4.5.3 - Turnos: filtros, rangos y orden
 
+Estado: cerrada.
+
 Problemas detectados:
 
-- El boton del dashboard para ver todos los turnos no reinicia el filtro de estado.
-- No queda claro que hace `Ver turnos de la ventana`.
-- El filtro/orden en Turnos no funciona correctamente.
-- No queda claro el boton para reiniciar filtros en Turnos.
+- El boton del dashboard para ver todos los turnos no reinicia el filtro de estado. Corregido con `status=ALL`.
+- No queda claro que hace `Ver turnos de la ventana`. Corregido: ahora dice `Ver semana actual y proxima`.
+- El filtro/orden en Turnos no funciona correctamente. Corregido: se retiro el selector de orden por ahora y Turnos queda ordenado por fecha ascendente.
+- No queda claro el boton para reiniciar filtros en Turnos. Corregido con botones de rango y `Limpiar filtros`.
 - Deberian existir tres botones claros:
-  - `Semana actual + proxima`.
-  - `Semana actual`.
-  - `Proxima semana`.
+  - `Semana actual + proxima`. Implementado.
+  - `Semana actual`. Implementado.
+  - `Proxima semana`. Implementado.
 
 Recomendacion:
 
-- Reemplazar `Ver turnos de la ventana` por un texto mas explicito, por ejemplo `Ver semana actual y proxima`.
-- Cuando el Dashboard abre `Total ventana`, enviar explicitamente `status=` vacio o hacer que Turnos limpie estado al no recibir `status`.
+- Reemplazar `Ver turnos de la ventana` por un texto mas explicito, por ejemplo `Ver semana actual y proxima`. Implementado.
+- Cuando el Dashboard abre `Total ventana`, enviar explicitamente `status=` vacio o hacer que Turnos limpie estado al no recibir `status`. Implementado con `status=ALL`.
 - En Turnos, separar controles:
-  - Grupo de rango rapido: `Semana actual`, `Proxima semana`, `Semana actual + proxima`.
-  - Boton secundario: `Limpiar filtros`.
-  - Selector de orden visible y validado.
-- Verificar si el backend soporta todos los `sort` usados. Si un sort no es confiable, hacer orden local o limitar opciones.
+  - Grupo de rango rapido: `Semana actual`, `Proxima semana`, `Semana actual + proxima`. Implementado.
+  - Boton secundario: `Limpiar filtros`. Implementado.
+  - Selector de orden visible y validado. Retirado por decision UX: no aporta al MVP actual.
+- Verificar si el backend soporta todos los `sort` usados. Si un sort no es confiable, hacer orden local o limitar opciones. Retirado del alcance actual; queda como mejora futura.
 
 Salida esperada:
 
-- Turnos permite cambiar rango, filtros y orden sin estados viejos escondidos.
+- Turnos permite cambiar rango, filtros y orden sin estados viejos escondidos. Implementado.
 
 #### Fase 4.5.4 - Modales encadenados de Turnos
 

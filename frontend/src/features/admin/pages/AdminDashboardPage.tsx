@@ -63,7 +63,7 @@ function appointmentsUrl(filters: {
   clientId?: number;
   from?: Date | string;
   professionalId?: number;
-  status?: AppointmentStatus;
+  status?: AppointmentStatus | "ALL";
   to?: Date | string;
 }) {
   const params = new URLSearchParams();
@@ -183,6 +183,7 @@ export function AdminDashboardPage() {
   const completedCount = countByStatus(appointments, "COMPLETED");
   const windowAppointmentsUrl = appointmentsUrl({
     from: windowStart,
+    status: "ALL",
     to: windowEnd,
   });
 
@@ -357,7 +358,7 @@ export function AdminDashboardPage() {
             </Link>
             <Link className="quick-action" to={windowAppointmentsUrl}>
               <Search aria-hidden="true" size={16} />
-              Ver turnos de la ventana
+              Ver semana actual y proxima
             </Link>
           </article>
 

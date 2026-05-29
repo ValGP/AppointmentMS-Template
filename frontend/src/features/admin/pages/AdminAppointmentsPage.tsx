@@ -110,9 +110,15 @@ const simpleActionLabels: Record<
 
 const initialStart = startOfWeek(new Date());
 const initialEnd = endOfDay(addDays(initialStart, 13));
+const nextWeekStart = addDays(initialStart, 7);
+const nextWeekEnd = endOfDay(addDays(nextWeekStart, 6));
 
 function toDateInput(value: Date) {
-  return value.toISOString().slice(0, 10);
+  const pad = (part: number) => String(part).padStart(2, "0");
+
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(
+    value.getDate(),
+  )}`;
 }
 
 function toDayKey(value: string) {
@@ -155,7 +161,9 @@ function getFiltersFromSearchParams(searchParams: URLSearchParams) {
     nextFilters.to = to;
   }
 
-  if (status && isAppointmentStatus(status)) {
+  if (status === "ALL") {
+    nextFilters.status = "";
+  } else if (status && isAppointmentStatus(status)) {
     nextFilters.status = status;
   }
 
@@ -182,10 +190,6 @@ export function AdminAppointmentsPage() {
     from: toDateInput(initialStart),
     to: toDateInput(initialEnd),
   });
-  const [appointmentSort, setAppointmentSort] = usePersistentState(
-    "admin:appointments:sort",
-    "startDateTime,asc",
-  );
   const [transition, setTransition] = useState<{
     action: TransitionAction;
     appointment: Appointment;
@@ -224,7 +228,7 @@ export function AdminAppointmentsPage() {
         to: filters.to ? toDateTimeEnd(filters.to) : undefined,
         page,
         size: 40,
-        sort: appointmentSort,
+        sort: "startDateTime,asc",
       }),
   });
 
@@ -324,6 +328,26 @@ export function AdminAppointmentsPage() {
       status: "",
       from: toDateInput(initialStart),
       to: toDateInput(initialEnd),
+    });
+    setPage(0);
+  }
+
+  function setRange(from: Date, to: Date) {
+    setFilters((current) => ({
+      ...current,
+      from: toDateInput(from),
+      to: toDateInput(to),
+    }));
+    setPage(0);
+  }
+
+  function clearFilters() {
+    setFilters({
+      clientId: "",
+      professionalId: "",
+      status: "",
+      from: "",
+      to: "",
     });
     setPage(0);
   }
@@ -430,6 +454,29 @@ export function AdminAppointmentsPage() {
           />
         </div>
 
+        <div className="appointment-range-actions" aria-label="Rangos rapidos">
+          <button
+            className="admin-soft-button"
+            type="button"
+            onClick={() => setRange(initialStart, endOfDay(addDays(initialStart, 6)))}
+          >
+            Semana actual
+          </button>
+          <button
+            className="admin-soft-button"
+            type="button"
+            onClick={() => setRange(nextWeekStart, nextWeekEnd)}
+          >
+            Proxima semana
+          </button>
+          <button className="admin-soft-button" type="button" onClick={resetFilters}>
+            Semana actual + proxima
+          </button>
+          <button className="admin-danger-button" type="button" onClick={clearFilters}>
+            Limpiar filtros
+          </button>
+        </div>
+
         <div className="appointments-filter-grid">
           <label>
             Desde
@@ -489,25 +536,6 @@ export function AdminAppointmentsPage() {
                   {client.fullName}
                 </option>
               ))}
-            </select>
-          </label>
-          <button className="admin-soft-button" type="button" onClick={resetFilters}>
-            <Search aria-hidden="true" size={16} />
-            Semana actual + proxima
-          </button>
-          <label>
-            Orden
-            <select
-              value={appointmentSort}
-              onChange={(event) => {
-                setAppointmentSort(event.target.value);
-                setPage(0);
-              }}
-            >
-              <option value="startDateTime,asc">Fecha cercana</option>
-              <option value="startDateTime,desc">Fecha lejana</option>
-              <option value="status,asc">Estado A-Z</option>
-              <option value="client.fullName,asc">Cliente A-Z</option>
             </select>
           </label>
         </div>
