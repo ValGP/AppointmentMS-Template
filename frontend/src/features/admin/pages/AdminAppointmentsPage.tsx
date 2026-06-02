@@ -270,6 +270,7 @@ export function AdminAppointmentsPage() {
     onSuccess: async (_data, variables) => {
       await refreshAppointments();
       setSimpleAction(null);
+      setSelectedAppointment(null);
       showToast(simpleActionLabels[variables.action].success);
     },
     onError: (error) =>
@@ -297,6 +298,7 @@ export function AdminAppointmentsPage() {
     onSuccess: async (_data, variables) => {
       await refreshAppointments();
       closeTransitionModal();
+      setSelectedAppointment(null);
       showToast(
         variables.action === "reject" ? "Turno rechazado." : "Turno cancelado.",
       );
@@ -353,14 +355,12 @@ export function AdminAppointmentsPage() {
   }
 
   function openTransitionModal(action: TransitionAction, appointment: Appointment) {
-    setSelectedAppointment(null);
     setTransition({ action, appointment });
     setTransitionReason("");
     setTransitionError(null);
   }
 
   function openSimpleAction(action: SimpleAction, appointment: Appointment) {
-    setSelectedAppointment(null);
     setSimpleAction({ action, appointment });
   }
 
@@ -633,6 +633,7 @@ export function AdminAppointmentsPage() {
           }
           kicker="Confirmacion"
           onClose={closeTransitionModal}
+          stack="top"
         >
           <div className="transition-summary">
             <strong>{transition.appointment.clientName}</strong>

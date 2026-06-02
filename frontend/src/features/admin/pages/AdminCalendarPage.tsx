@@ -627,7 +627,10 @@ export function AdminCalendarPage() {
               </small>
             </div>
           </div>
-          <form className="admin-form-grid" onSubmit={createForm.handleSubmit(createFromSlot)}>
+          <form
+            className="admin-form-grid appointment-create-form"
+            onSubmit={createForm.handleSubmit(createFromSlot)}
+          >
             <div className="appointment-client-mode form-span-2">
               <div className="segmented-control" role="group" aria-label="Tipo de cliente">
                 <button
@@ -689,6 +692,20 @@ export function AdminCalendarPage() {
                   />
                 </label>
                 <label>
+                  Telefono
+                  <input
+                    {...createForm.register("newClientPhone", {
+                      maxLength: {
+                        value: 40,
+                        message: "Maximo 40 caracteres.",
+                      },
+                    })}
+                  />
+                  <FieldError
+                    message={createForm.formState.errors.newClientPhone?.message}
+                  />
+                </label>
+                <label>
                   Email
                   <input
                     type="email"
@@ -703,20 +720,6 @@ export function AdminCalendarPage() {
                   />
                   <FieldError
                     message={createForm.formState.errors.newClientEmail?.message}
-                  />
-                </label>
-                <label>
-                  Telefono
-                  <input
-                    {...createForm.register("newClientPhone", {
-                      maxLength: {
-                        value: 40,
-                        message: "Maximo 40 caracteres.",
-                      },
-                    })}
-                  />
-                  <FieldError
-                    message={createForm.formState.errors.newClientPhone?.message}
                   />
                 </label>
                 <label>

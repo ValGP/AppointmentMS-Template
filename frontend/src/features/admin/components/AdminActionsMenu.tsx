@@ -1,4 +1,5 @@
 import { MoreHorizontal, type LucideIcon } from "lucide-react";
+import { useEffect, useId, useRef } from "react";
 
 export type AdminActionMenuItem = {
   disabled?: boolean;
@@ -14,8 +15,58 @@ type AdminActionsMenuProps = {
 };
 
 export function AdminActionsMenu({ items, label }: AdminActionsMenuProps) {
+  const menuId = useId();
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    function closeOtherMenus(event: Event) {
+      if (
+        event instanceof CustomEvent &&
+        event.detail?.menuId !== menuId
+      ) {
+        detailsRef.current?.removeAttribute("open");
+      }
+    }
+
+    function closeOnOutsideClick(event: MouseEvent) {
+      const menu = detailsRef.current;
+
+      if (!menu?.open || !(event.target instanceof Node)) {
+        return;
+      }
+
+      if (!menu.contains(event.target)) {
+        menu.removeAttribute("open");
+      }
+    }
+
+    window.addEventListener("admin-actions-menu-open", closeOtherMenus);
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+
+    return () => {
+      window.removeEventListener("admin-actions-menu-open", closeOtherMenus);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+    };
+  }, [menuId]);
+
+  function handleToggle() {
+    if (!detailsRef.current?.open) {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("admin-actions-menu-open", {
+        detail: { menuId },
+      }),
+    );
+  }
+
   return (
-    <details className="admin-actions-menu">
+    <details
+      className="admin-actions-menu"
+      onToggle={handleToggle}
+      ref={detailsRef}
+    >
       <summary aria-label={label}>
         <MoreHorizontal aria-hidden="true" size={18} />
       </summary>

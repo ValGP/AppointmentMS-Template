@@ -10,6 +10,23 @@ El frontend se pensara en tres superficies principales:
 - Area de cliente para solicitar y consultar turnos.
 - Panel administrativo para operar servicios, profesionales, horarios, bloqueos y turnos.
 
+## 0. Estado visual por fases
+
+- [x] Fase 0 - Preparacion del proyecto frontend.
+- [x] Fase 1 - Autenticacion y sesion.
+- [x] Fase 2 - Panel admin base responsive con dark/light mode.
+- [x] Fase 3 - Catalogos administrativos.
+- [x] Fase 4 - Agenda y turnos admin.
+- [x] Fase 4.1 - Cierre operativo del admin antes del cliente.
+- [x] Fase 4.2 - Relacion profesional-servicio e interfaces de asignacion.
+- [x] Fase 4.3 - Seguridad operativa y mejoras UX del admin.
+- [x] Fase 4.4 - Pulido operativo avanzado del admin.
+- [x] Fase 4.5 - Correcciones UX post-prueba del admin.
+- [ ] Fase 5 - Flujo cliente para solicitar turno.
+- [ ] Fase 6 - Area cliente.
+- [ ] Fase 7 - Sitio publico y definicion estetica. Iniciada.
+- [ ] Fase 8 - Pulido y calidad.
+
 ## 1. Criterio general
 
 El frontend no deberia empezar como una landing decorativa grande. El sistema necesita una experiencia util: mostrar el negocio, permitir que un cliente pida turno y darle al admin una herramienta clara para trabajar.
@@ -994,13 +1011,13 @@ Problemas detectados:
 
 Recomendacion:
 
-- Agregar modal de confirmacion antes de cerrar sesion.
-- Texto sugerido: `Vas a cerrar la sesion actual.`
-- Mantener botones claros: `Volver` y `Cerrar sesion`.
+- Agregar modal de confirmacion antes de cerrar sesion. Implementado.
+- Texto sugerido: `Vas a cerrar la sesion actual.` Implementado.
+- Mantener botones claros: `Volver` y `Cerrar sesion`. Implementado.
 
 Salida esperada:
 
-- Se evitan cierres accidentales de sesion.
+- Se evitan cierres accidentales de sesion. Implementado.
 
 #### Fase 4.5.2 - Busquedas, campos y limpieza visual
 
@@ -1012,23 +1029,23 @@ Problemas detectados:
 
 Estado actual:
 
-- Servicios y Profesionales ya tienen buscador en 4.4.6, pero necesitan revision visual fina.
+- Servicios y Profesionales ya tienen buscador en 4.4.6, con revision visual fina implementada.
 
 Recomendacion:
 
-- Revisar padding interno de inputs con icono para que la lupa no pise texto.
-- Mantener buscadores contextuales en Servicios, Profesionales y Clientes.
+- Revisar padding interno de inputs con icono para que la lupa no pise texto. Implementado.
+- Mantener buscadores contextuales en Servicios, Profesionales y Clientes. Implementado.
 - En el modal de crear turno desde Agenda, ordenar `Nuevo cliente` como:
-  1. Nombre completo.
-  2. Telefono.
-  3. Email.
-  4. Password.
-  5. Notas del turno.
-- Mantener el resumen superior del turno visible antes del formulario.
+  1. Nombre completo. Implementado.
+  2. Telefono. Implementado.
+  3. Email. Implementado.
+  4. Password. Implementado.
+  5. Notas del turno. Implementado.
+- Mantener el resumen superior del turno visible antes del formulario. Implementado.
 
 Salida esperada:
 
-- Los formularios se leen de forma natural y los buscadores no generan ruido visual.
+- Los formularios se leen de forma natural y los buscadores no generan ruido visual. Implementado.
 
 #### Fase 4.5.3 - Turnos: filtros, rangos y orden
 
@@ -1057,7 +1074,7 @@ Recomendacion:
 
 Salida esperada:
 
-- Turnos permite cambiar rango, filtros y orden sin estados viejos escondidos. Implementado.
+- Turnos permite cambiar rango y filtros sin estados viejos escondidos. El orden queda como mejora futura si vuelve a aportar valor. Implementado.
 
 #### Fase 4.5.4 - Modales encadenados de Turnos
 
@@ -1076,7 +1093,7 @@ Recomendacion:
 
 Salida esperada:
 
-- El admin puede abrir una accion, arrepentirse y seguir viendo el mismo turno.
+- El admin puede abrir una accion, arrepentirse y seguir viendo el mismo turno. Implementado.
 
 #### Fase 4.5.5 - Menu de acciones unico
 
@@ -1092,7 +1109,7 @@ Recomendacion:
 
 Salida esperada:
 
-- Solo un menu de acciones queda abierto por vez.
+- Solo un menu de acciones queda abierto por vez. Implementado.
 
 Orden recomendado:
 
@@ -1143,19 +1160,32 @@ Salida esperada:
 
 ### Fase 7 - Sitio publico
 
+Estado: iniciada.
+
 Objetivo:
 
 Dejar presentable la cara publica del negocio.
 
 Tareas:
 
-- Home del negocio.
-- Seccion de servicios organizada por tipos o categorias.
-- Detalle publico de servicios con texto y, mas adelante, imagenes.
-- CTA para pedir turno.
-- Contacto.
-- Ajuste responsive.
-- Pulido visual.
+- [x] Home del negocio inspirada en el export `estetica (Community)`.
+- [x] Definicion estetica inicial para BIBE en espanol.
+- [x] Hero publico con imagen, mensaje claro y CTA.
+- [x] Seccion de tratamientos organizada por categorias.
+- [x] Navbar simplificada con tratamientos agrupados.
+- [x] Seccion destacada de recuperacion capilar.
+- [x] Seccion `Por que elegir BIBE`.
+- [x] Seccion de resultados/confianza.
+- [x] CTA final a contacto/WhatsApp.
+- [x] Footer simple.
+- [x] Detalle publico de servicios por categoria con estructura inicial.
+- [x] CTA para pedir turno.
+- [x] Contacto base.
+- [x] Ajuste responsive inicial.
+- [x] Navegacion desde navbar y home hacia paginas internas de tratamientos.
+- [ ] Reemplazar textos e informacion placeholder por contenido real de BIBE.
+- [ ] Reemplazar placeholders visuales de tratamientos por imagenes reales.
+- [ ] Pulido visual final despues de revisar en navegador.
 
 Salida esperada:
 
@@ -1165,6 +1195,12 @@ Estructura publica inicial:
 
 - Inicio/Home.
 - Servicios organizados por categorias.
+- Paginas internas:
+  - `/tratamientos/recuperacion-capilar`.
+  - `/tratamientos/estetica-facial`.
+  - `/tratamientos/estetica-corporal`.
+  - `/tratamientos/pestanas-cejas`.
+  - `/tratamientos/podologia`.
 - Turno, que lleva a login/registro si el usuario no esta autenticado.
 - Contacto.
 

@@ -18,6 +18,7 @@ import { ClientProfilePage } from "../../features/client/pages/ClientProfilePage
 import { LoginPage } from "../../features/auth/pages/LoginPage";
 import { RegisterPage } from "../../features/auth/pages/RegisterPage";
 import { HomePage } from "../../features/public-site/pages/HomePage";
+import { TreatmentCategoryPage } from "../../features/public-site/pages/TreatmentCategoryPage";
 import { NotFoundPage } from "../../shared/components/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { path: "/", element: <HomePage /> },
+      { path: "/tratamientos/:slug", element: <TreatmentCategoryPage /> },
       {
         element: <PublicOnlyRoute />,
         children: [

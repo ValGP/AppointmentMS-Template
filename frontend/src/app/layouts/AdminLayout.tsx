@@ -17,6 +17,7 @@ import {
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useTheme } from "../providers/ThemeProvider";
+import { AdminConfirmDialog } from "../../features/admin/components/AdminConfirmDialog";
 import { useAuth } from "../../features/auth/context/AuthProvider";
 
 const adminLinks = [
@@ -34,6 +35,7 @@ export function AdminLayout() {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const location = useLocation();
   const isDark = theme === "dark";
   const currentLink =
@@ -131,7 +133,7 @@ export function AdminLayout() {
             <button
               className="icon-button"
               type="button"
-              onClick={logout}
+              onClick={() => setIsLogoutConfirmOpen(true)}
               title="Cerrar sesion"
               aria-label="Cerrar sesion"
             >
@@ -144,6 +146,17 @@ export function AdminLayout() {
           <Outlet />
         </main>
       </div>
+
+      {isLogoutConfirmOpen ? (
+        <AdminConfirmDialog
+          title="Cerrar sesion"
+          message="Vas a cerrar la sesion actual."
+          confirmLabel="Cerrar sesion"
+          tone="danger"
+          onCancel={() => setIsLogoutConfirmOpen(false)}
+          onConfirm={logout}
+        />
+      ) : null}
     </div>
   );
 }
