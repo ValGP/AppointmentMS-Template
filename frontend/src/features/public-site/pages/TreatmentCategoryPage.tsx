@@ -43,7 +43,6 @@ export function TreatmentCategoryPage() {
             <ArrowLeft aria-hidden="true" size={16} />
             Tratamientos
           </Link>
-          <p className="public-pill">Categoria</p>
           <h1>{category.title}</h1>
           <p>{category.heroText}</p>
           <a className="public-primary-button" href="#consulta">
@@ -53,12 +52,11 @@ export function TreatmentCategoryPage() {
         </div>
 
         <div
-          aria-label={category.placeholderLabel}
           className={`treatment-visual treatment-visual-${category.slug}`}
-          role="img"
         >
-          <Icon aria-hidden="true" size={54} />
-          <span>{category.placeholderLabel}</span>
+          <img alt={category.title} src={category.imageSrc} />
+          <span>{category.title}</span>
+          <Icon aria-hidden="true" size={24} />
         </div>
       </section>
 

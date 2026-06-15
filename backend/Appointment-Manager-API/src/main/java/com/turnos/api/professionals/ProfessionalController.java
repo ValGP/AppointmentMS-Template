@@ -39,7 +39,7 @@ public class ProfessionalController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
     public List<ProfessionalResponse> findAll(@RequestParam(required = false) Long serviceId) {
         if (serviceId != null) {
             return professionalServiceAssignmentService.findProfessionalsForService(serviceId).stream()
@@ -51,7 +51,7 @@ public class ProfessionalController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
     public ProfessionalResponse findById(@PathVariable Long id) {
         return professionalService.findById(id);
     }

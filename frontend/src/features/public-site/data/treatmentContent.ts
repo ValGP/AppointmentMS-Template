@@ -11,7 +11,7 @@ export type TreatmentCategory = {
   heroText: string;
   intro: string[];
   ctaLabel: string;
-  placeholderLabel: string;
+  imageSrc: string;
   treatments: TreatmentItem[];
   benefits: string[];
 };
@@ -29,7 +29,7 @@ export const treatmentCategories: TreatmentCategory[] = [
       "Los tratamientos capilares pueden ayudar a fortalecer el cabello, mejorar la calidad del cuero cabelludo y acompanar procesos de debilitamiento. La indicacion depende de las necesidades de cada persona.",
     ],
     ctaLabel: "Consultar recuperacion capilar",
-    placeholderLabel: "Placeholder capilar",
+    imageSrc: "/treatments/recuperacion-capilar.png",
     benefits: [
       "Evaluacion segun cada caso",
       "Tratamientos capilares no quirurgicos",
@@ -111,7 +111,7 @@ export const treatmentCategories: TreatmentCategory[] = [
       "Cada procedimiento se elige segun el objetivo, el tipo de piel y la evaluacion profesional, evitando promesas absolutas y priorizando un resultado cuidado.",
     ],
     ctaLabel: "Consultar tratamiento facial",
-    placeholderLabel: "Placeholder facial",
+    imageSrc: "/treatments/estetica-facial.png",
     benefits: [
       "Evaluacion de piel",
       "Opciones adaptadas al objetivo",
@@ -213,7 +213,7 @@ export const treatmentCategories: TreatmentCategory[] = [
       "En cada consulta se revisa que opcion puede ser mas adecuada, con una comunicacion clara sobre alcances y expectativas.",
     ],
     ctaLabel: "Consultar tratamiento corporal",
-    placeholderLabel: "Placeholder corporal",
+    imageSrc: "/treatments/estetica-corporal.png",
     benefits: [
       "Indicacion segun objetivo",
       "Cuidado corporal progresivo",
@@ -265,7 +265,7 @@ export const treatmentCategories: TreatmentCategory[] = [
       "Cada diseno se adapta al estilo de la persona, desde terminaciones naturales hasta efectos de mayor presencia.",
     ],
     ctaLabel: "Consultar pestanas y cejas",
-    placeholderLabel: "Placeholder mirada",
+    imageSrc: "/treatments/pestanas-cejas.png",
     benefits: [
       "Diseno segun tu estilo",
       "Terminaciones prolijas",
@@ -357,7 +357,7 @@ export const treatmentCategories: TreatmentCategory[] = [
       "La consulta permite orientar cada caso, revisar habitos de cuidado y definir el abordaje mas adecuado.",
     ],
     ctaLabel: "Consultar podologia",
-    placeholderLabel: "Placeholder podologia",
+    imageSrc: "/treatments/podologia.webp",
     benefits: [
       "Cuidado profesional de pies",
       "Orientacion ante molestias",

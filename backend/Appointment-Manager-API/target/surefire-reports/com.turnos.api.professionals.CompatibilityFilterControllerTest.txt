@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.turnos.api.professionals.CompatibilityFilterControllerTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.409 s -- in com.turnos.api.professionals.CompatibilityFilterControllerTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.353 s -- in com.turnos.api.professionals.CompatibilityFilterControllerTest

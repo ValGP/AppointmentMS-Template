@@ -12,7 +12,9 @@ export function PublicFooter() {
   return (
     <footer className="public-footer">
       <div className="public-footer-brand">
-        <span className="brand-mark">B</span>
+        <span className="footer-brand-logo">
+          <img alt="" src="/icon/blanco.png" />
+        </span>
         <div>
           <strong>BIBE</strong>
           <small>Salud y estetica</small>

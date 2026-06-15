@@ -33,6 +33,15 @@ export function PublicLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (location.hash) {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById(location.hash.slice(1))
+          ?.scrollIntoView({ behavior: "auto", block: "start" });
+      });
+      return;
+    }
+
     if (!location.hash) {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
@@ -71,8 +80,9 @@ export function PublicLayout() {
         }`}
       >
         <NavLink className="brand" to="/" aria-label="Inicio BIBE" onClick={closeMenus}>
-          <span className="brand-mark">B</span>
-          <span>BIBE</span>
+          <span className="brand-logo">
+            <img alt="" src="/icon/blanco.png" />
+          </span>
         </NavLink>
         <button
           className="public-menu-button"
@@ -109,12 +119,12 @@ export function PublicLayout() {
             ref={treatmentsMenuRef}
             className={`public-nav-menu ${isTreatmentsOpen ? "is-open" : ""}`}
             onMouseEnter={() => {
-              if (!window.matchMedia("(max-width: 640px)").matches) {
+              if (!window.matchMedia("(max-width: 900px)").matches) {
                 setIsTreatmentsOpen(true);
               }
             }}
             onMouseLeave={() => {
-              if (!window.matchMedia("(max-width: 640px)").matches) {
+              if (!window.matchMedia("(max-width: 900px)").matches) {
                 setIsTreatmentsOpen(false);
               }
             }}
@@ -123,7 +133,7 @@ export function PublicLayout() {
               className="public-nav-trigger"
               type="button"
               onClick={() => {
-                if (window.matchMedia("(max-width: 640px)").matches) {
+                if (window.matchMedia("(max-width: 900px)").matches) {
                   setIsTreatmentsOpen((current) => !current);
                   return;
                 }

@@ -149,6 +149,33 @@ class CompatibilityFilterControllerTest {
     }
 
     @Test
+    void clientCanReadServicesAndCompatibleProfessionals() throws Exception {
+        String token = registerClient("client.read.catalogs@email.com");
+        Service service = serviceRepository.save(new Service(
+                "Client Read Service",
+                null,
+                30,
+                BigDecimal.valueOf(1000)
+        ));
+        Professional professional = professionalRepository.save(new Professional(
+                "Client Read Pro",
+                "client.read.pro@email.com",
+                "123"
+        ));
+
+        mockMvc.perform(get("/api/services")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == %d)]", service.getId()).exists());
+
+        mockMvc.perform(get("/api/professionals")
+                        .param("serviceId", service.getId().toString())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == %d)]", professional.getId()).exists());
+    }
+
+    @Test
     void missingFilterIdsReturnNotFound() throws Exception {
         String token = login("admin@turnos.local", "admin1234");
 
@@ -190,6 +217,25 @@ class CompatibilityFilterControllerTest {
                                 }
                                 """.formatted(email, password)))
                 .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return objectMapper.readTree(response).get("token").asText();
+    }
+
+    private String registerClient(String email) throws Exception {
+        String response = mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Client",
+                                  "email": "%s",
+                                  "password": "password123",
+                                  "phone": "123"
+                                }
+                                """.formatted(email)))
+                .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

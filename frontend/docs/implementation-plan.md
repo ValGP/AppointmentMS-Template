@@ -1121,21 +1121,130 @@ Orden recomendado:
 
 ### Fase 5 - Flujo cliente para solicitar turno
 
+Estado: pendiente.
+
 Objetivo:
 
 Permitir que un cliente pida turno con pocos pasos.
 
+#### Fase 5.1 - Estructura base del area cliente
+
+Estado: implementada.
+
+Objetivo:
+
+Definir la primera experiencia del cliente autenticado. Al iniciar sesion, el cliente entra directamente al flujo para pedir turno, pero con una estructura preparada para crecer hacia perfil, proximos turnos y turnos pasados.
+
 Tareas:
 
-- Selector de servicio.
-- Profesional sugerido/asignado por el sistema.
-- Calendario de fecha.
-- Limitar fechas visibles a la semana actual y la semana siguiente.
-- Definir visualmente si el cliente ve solo dias seleccionables o tambien indicadores de dias con turnos disponibles.
-- Consulta de disponibilidad.
-- Selector de horario.
-- Confirmacion de solicitud.
-- Pantalla de resultado.
+- [x] Revisar ruta actual `/app/book` y layout cliente.
+- [x] Definir el shell visual del area cliente.
+- [x] La primera vista del cliente debe ser la seleccion de servicio para pedir turno.
+- [x] Mostrar arriba a la derecha el usuario autenticado.
+- [x] Preparar acceso futuro a edicion de perfil o datos personales.
+- [x] Preparar navegacion futura para:
+  - proximos turnos
+  - turnos pasados
+  - perfil
+- [x] Definir copy y estructura visual inicial del flujo de reserva.
+- [x] Mostrar estado vacio cuando todavia no hay servicio seleccionado.
+- [x] Cargar servicios activos disponibles para reserva.
+- [x] Evitar mostrar servicios inactivos.
+- [x] Agregar estados de carga y error.
+
+Salida esperada:
+
+- El cliente entra a un area propia clara, orientada primero a pedir turno, pero preparada para incorporar historial, proximos turnos y perfil.
+
+#### Fase 5.2 - Seleccion de servicio y profesional
+
+Estado: implementada.
+
+Objetivo:
+
+Permitir que el cliente elija primero el servicio y despues el profesional compatible, manteniendo la relacion profesional-servicio.
+
+Tareas:
+
+- [x] Selector de servicio como primer paso.
+- [x] Al elegir servicio, cargar profesionales que realizan ese servicio.
+- [x] Si hay un solo profesional compatible, permitir preseleccion o seleccion simple.
+- [x] Si hay varios profesionales, mostrar selector claro.
+- [x] Si no hay profesionales compatibles, mostrar mensaje accionable.
+- [x] No avanzar a disponibilidad sin servicio y profesional seleccionados.
+
+Salida esperada:
+
+- El cliente selecciona una combinacion valida de servicio y profesional.
+
+#### Fase 5.3 - Disponibilidad por semana
+
+Estado: implementada.
+
+Objetivo:
+
+Mostrar disponibilidad de turnos de forma simple, usando semanas navegables y slots claros.
+
+Tareas:
+
+- [x] Mostrar semana actual por defecto.
+- [x] Agregar selector de semana con flecha anterior y siguiente.
+- [x] Mostrar rango visible de 7 dias.
+- [x] Limitar inicialmente a semana actual y semana siguiente, salvo decision posterior.
+- [x] Consultar disponibilidad segun servicio, profesional y semana.
+- [x] En desktop, mostrar dias en columnas con horarios disponibles.
+- [x] En mobile, mostrar dias como secciones verticales.
+- [x] Mostrar mensaje si no hay horarios disponibles.
+
+Salida esperada:
+
+- El cliente ve horarios disponibles de forma clara y responsive.
+
+#### Fase 5.4 - Confirmacion de solicitud
+
+Estado: implementada.
+
+Objetivo:
+
+Crear una solicitud de turno `PENDING` con una confirmacion entendible antes de enviarla.
+
+Tareas:
+
+- [x] Permitir seleccionar un horario disponible.
+- [x] Mostrar resumen antes de confirmar:
+  - servicio
+  - profesional
+  - fecha
+  - horario
+- [x] Agregar campo opcional de notas si el backend lo permite.
+- [x] Confirmar solicitud contra backend.
+- [x] Bloquear doble envio mientras se procesa.
+- [x] Mostrar feedback de exito o error.
+
+Salida esperada:
+
+- El cliente puede solicitar un turno que queda como `PENDING`.
+
+#### Fase 5.5 - Resultado y continuidad
+
+Estado: implementada.
+
+Objetivo:
+
+Cerrar el flujo con una pantalla clara y conectar con el area cliente.
+
+Tareas:
+
+- [x] Pantalla de resultado despues de solicitar turno.
+- [x] Explicar que el turno queda pendiente de confirmacion.
+- [x] Boton para ver `Mis turnos`.
+- [x] Boton para solicitar otro turno.
+- [x] Revisar que el admin vea la solicitud pendiente.
+- [x] Probar flujo completo cliente -> admin.
+
+Salida esperada:
+
+- El cliente entiende que pidio un turno y puede seguir navegando sin perder contexto.
 
 Salida esperada:
 
@@ -1184,7 +1293,7 @@ Tareas:
 - [x] Ajuste responsive inicial.
 - [x] Navegacion desde navbar y home hacia paginas internas de tratamientos.
 - [ ] Reemplazar textos e informacion placeholder por contenido real de BIBE.
-- [ ] Reemplazar placeholders visuales de tratamientos por imagenes reales.
+- [x] Reemplazar placeholders visuales de tratamientos por imagenes reales.
 - [ ] Pulido visual final despues de revisar en navegador.
 
 Salida esperada:
