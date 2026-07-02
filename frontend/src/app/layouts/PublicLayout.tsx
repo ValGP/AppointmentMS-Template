@@ -1,6 +1,6 @@
 import { Menu, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { treatmentCategories } from "../../features/public-site/data/treatmentContent";
 
 export function PublicLayout() {
@@ -146,8 +146,8 @@ export function PublicLayout() {
             </button>
             <div className="public-nav-dropdown">
               {treatmentCategories.map((category) => (
-                <a
-                  href={`/tratamientos/${category.slug}`}
+                <Link
+                  to={`/tratamientos/${category.slug}`}
                   key={category.slug}
                   onClick={() => {
                     setIsMobileMenuOpen(false);
@@ -155,7 +155,7 @@ export function PublicLayout() {
                   }}
                 >
                   {category.title}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
