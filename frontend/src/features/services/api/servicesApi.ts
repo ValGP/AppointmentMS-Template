@@ -3,20 +3,30 @@ import { apiRequest } from "../../../shared/api/httpClient";
 export type ServiceCatalogItem = {
   id: number;
   name: string;
+  categoryId: number | null;
+  categoryName: string | null;
+  categorySlug: string | null;
   description: string | null;
   durationMinutes: number;
   price: number;
   active: boolean;
+  onlineBookable: boolean;
+  requiresEvaluation: boolean;
 };
 
 export type ServicePayload = {
   name: string;
+  categoryId: number;
   description?: string;
   durationMinutes: number;
   price: number;
+  onlineBookable: boolean;
+  requiresEvaluation: boolean;
 };
 
 export type ServiceSearchParams = {
+  categoryId?: number;
+  onlineBookableOnly?: boolean;
   professionalId?: number;
 };
 
@@ -43,8 +53,16 @@ export type ServiceProfessionalsAssignmentPayload = {
 export function getServices(params: ServiceSearchParams = {}) {
   const searchParams = new URLSearchParams();
 
+  if (params.categoryId !== undefined) {
+    searchParams.set("categoryId", String(params.categoryId));
+  }
+
   if (params.professionalId !== undefined) {
     searchParams.set("professionalId", String(params.professionalId));
+  }
+
+  if (params.onlineBookableOnly !== undefined) {
+    searchParams.set("onlineBookableOnly", String(params.onlineBookableOnly));
   }
 
   const query = searchParams.toString();

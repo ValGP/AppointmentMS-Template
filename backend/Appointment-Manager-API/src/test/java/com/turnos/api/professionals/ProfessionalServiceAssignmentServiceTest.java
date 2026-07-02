@@ -139,6 +139,7 @@ class ProfessionalServiceAssignmentServiceTest {
         ));
 
         inactiveProfessional.deactivate();
+        inactiveService = serviceRepository.findById(inactiveService.getId()).orElseThrow();
         inactiveService.deactivate();
         professionalRepository.save(inactiveProfessional);
         serviceRepository.save(inactiveService);

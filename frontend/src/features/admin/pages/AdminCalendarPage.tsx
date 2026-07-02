@@ -27,6 +27,7 @@ import {
   type ClientPayload,
 } from "../../clients/api/clientsApi";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
+import { getServiceCategories } from "../../services/api/serviceCategoriesApi";
 import { getServices } from "../../services/api/servicesApi";
 import { AdminEmptyState } from "../components/AdminEmptyState";
 import { AdminToast } from "../components/AdminToast";
@@ -102,6 +103,10 @@ export function AdminCalendarPage() {
     "admin:calendar:professionalId",
     0,
   );
+  const [categoryId, setCategoryId] = usePersistentState<number>(
+    "admin:calendar:categoryId",
+    0,
+  );
   const [serviceId, setServiceId] = usePersistentState<number>(
     "admin:calendar:serviceId",
     0,
@@ -114,14 +119,26 @@ export function AdminCalendarPage() {
     queryKey: ["professionals"],
     queryFn: () => getProfessionals(),
   });
+  const categoriesQuery = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: getServiceCategories,
+  });
+  const activeCategories = (categoriesQuery.data ?? []).filter(
+    (category) => category.active,
+  );
+  const selectedCategoryId =
+    categoryId && activeCategories.some((category) => category.id === categoryId)
+      ? categoryId
+      : 0;
   const servicesQuery = useQuery({
-    queryKey: ["services"],
-    queryFn: () => getServices(),
+    queryKey: ["services", "category", selectedCategoryId],
+    enabled: selectedCategoryId > 0,
+    queryFn: () => getServices({ categoryId: selectedCategoryId }),
   });
   const clientsQuery = useQuery({ queryKey: ["clients"], queryFn: getClients });
 
   const allProfessionals = professionalsQuery.data ?? [];
-  const allServices = servicesQuery.data ?? [];
+  const allServices = selectedCategoryId > 0 ? servicesQuery.data ?? [] : [];
   const clients = clientsQuery.data ?? [];
   const allActiveProfessionals = allProfessionals.filter(
     (professional) => professional.active,
@@ -170,6 +187,12 @@ export function AdminCalendarPage() {
       setServiceId(0);
     }
   }, [serviceId, selectedServiceId]);
+
+  useEffect(() => {
+    if (categoryId > 0 && selectedCategoryId === 0) {
+      setCategoryId(0);
+    }
+  }, [categoryId, selectedCategoryId]);
 
   const appointmentsQuery = useQuery({
     queryKey: ["calendar-appointments", selectedProfessionalId, weekStart],
@@ -321,6 +344,13 @@ export function AdminCalendarPage() {
 
   function resetCalendarFilters() {
     setWeekStartKey(toDateKey(currentWeekStart));
+    setCategoryId(0);
+    setServiceId(0);
+    setProfessionalId(0);
+  }
+
+  function updateCategoryFilter(nextCategoryId: number) {
+    setCategoryId(nextCategoryId);
     setServiceId(0);
     setProfessionalId(0);
   }
@@ -381,18 +411,22 @@ export function AdminCalendarPage() {
 
   const isLoading =
     servicesQuery.isLoading ||
+    categoriesQuery.isLoading ||
     professionalsQuery.isLoading ||
     compatibleProfessionalsQuery.isLoading ||
     appointmentsQuery.isLoading ||
     availabilityQueries.some((query) => query.isLoading);
   const hasError =
     servicesQuery.isError ||
+    categoriesQuery.isError ||
     professionalsQuery.isError ||
     compatibleProfessionalsQuery.isError ||
     appointmentsQuery.isError ||
     availabilityQueries.some((query) => query.isError);
   const emptyStateLabel = getCalendarEmptyStateLabel({
     hasActiveServices: allActiveServices.length > 0,
+    hasCategorySelection: selectedCategoryId > 0,
+    hasCategories: activeCategories.length > 0,
     hasCompatibleProfessionals: professionalOptions.length > 0,
     hasSelection: selectedProfessionalId > 0 && selectedServiceId > 0,
     professionalName: selectedProfessional?.fullName,
@@ -401,6 +435,7 @@ export function AdminCalendarPage() {
   const emptyStateAction = getCalendarEmptyStateAction({
     hasActiveServices: allActiveServices.length > 0,
     hasCompatibleProfessionals: professionalOptions.length > 0,
+    hasCategories: activeCategories.length > 0,
     selectedServiceId,
   });
 
@@ -421,12 +456,36 @@ export function AdminCalendarPage() {
       <article className="admin-card calendar-toolbar">
         <div className="calendar-filters">
           <label>
+            Categoria
+            <select
+              value={selectedCategoryId}
+              onChange={(event) =>
+                updateCategoryFilter(Number(event.target.value))
+              }
+            >
+              <option value={0}>Seleccionar categoria</option>
+              {activeCategories.length === 0 ? (
+                <option value={0}>Sin categorias activas</option>
+              ) : null}
+              {activeCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             Servicio
             <select
               value={selectedServiceId}
               onChange={(event) => updateServiceFilter(Number(event.target.value))}
+              disabled={selectedCategoryId === 0}
             >
-              <option value={0}>Seleccionar servicio</option>
+              <option value={0}>
+                {selectedCategoryId === 0
+                  ? "Primero selecciona categoria"
+                  : "Seleccionar servicio"}
+              </option>
               {serviceOptions.length === 0 ? (
                 <option value={0}>Sin servicios activos</option>
               ) : null}
@@ -860,18 +919,30 @@ function getDayItems(slots: AvailabilitySlot[], appointments: Appointment[]) {
 
 function getCalendarEmptyStateLabel({
   hasActiveServices,
+  hasCategories,
+  hasCategorySelection,
   hasCompatibleProfessionals,
   hasSelection,
   serviceName,
 }: {
   hasActiveServices: boolean;
+  hasCategories: boolean;
+  hasCategorySelection: boolean;
   hasCompatibleProfessionals: boolean;
   hasSelection: boolean;
   professionalName?: string;
   serviceName?: string;
 }) {
+  if (!hasCategories) {
+    return "No hay categorias activas. Crea o activa una categoria antes de revisar disponibilidad.";
+  }
+
+  if (!hasCategorySelection) {
+    return "Selecciona una categoria para ver sus servicios disponibles.";
+  }
+
   if (!hasActiveServices) {
-    return "No hay servicios activos. Activa o carga un servicio antes de revisar disponibilidad.";
+    return "No hay servicios activos en esta categoria. Activa o carga un servicio antes de revisar disponibilidad.";
   }
 
   if (!hasCompatibleProfessionals) {
@@ -887,13 +958,23 @@ function getCalendarEmptyStateLabel({
 
 function getCalendarEmptyStateAction({
   hasActiveServices,
+  hasCategories,
   hasCompatibleProfessionals,
   selectedServiceId,
 }: {
   hasActiveServices: boolean;
+  hasCategories: boolean;
   hasCompatibleProfessionals: boolean;
   selectedServiceId: number;
 }) {
+  if (!hasCategories) {
+    return (
+      <Link className="admin-primary-button" to="/admin/services">
+        Crear categoria
+      </Link>
+    );
+  }
+
   if (!hasActiveServices) {
     return (
       <Link className="admin-primary-button" to="/admin/services">

@@ -95,6 +95,42 @@ export function AdminLayout() {
               </NavLink>
             );
           })}
+
+          <div className="admin-nav-actions">
+            <button
+              className="admin-nav-action-btn"
+              type="button"
+              onClick={toggleTheme}
+              title={isDark ? "Usar modo claro" : "Usar modo oscuro"}
+              aria-label={isDark ? "Usar modo claro" : "Usar modo oscuro"}
+            >
+              {isDark ? (
+                <>
+                  <Sun aria-hidden="true" size={18} />
+                  <span>Modo claro</span>
+                </>
+              ) : (
+                <>
+                  <Moon aria-hidden="true" size={18} />
+                  <span>Modo oscuro</span>
+                </>
+              )}
+            </button>
+
+            <button
+              className="admin-nav-action-btn logout-btn"
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsLogoutConfirmOpen(true);
+              }}
+              title="Cerrar sesion"
+              aria-label="Cerrar sesion"
+            >
+              <LogOut aria-hidden="true" size={18} />
+              <span>Salir</span>
+            </button>
+          </div>
         </nav>
 
         <div className="admin-user-card">

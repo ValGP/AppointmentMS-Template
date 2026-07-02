@@ -104,6 +104,16 @@ export function cancelAppointmentByAdmin(
   });
 }
 
+export function cancelAppointmentByClient(
+  id: number,
+  payload: AppointmentTransitionPayload,
+) {
+  return apiRequest<Appointment>(`/api/appointments/${id}/cancel-by-client`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
 export function completeAppointment(id: number) {
   return apiRequest<Appointment>(`/api/appointments/${id}/complete`, {
     method: "PATCH",

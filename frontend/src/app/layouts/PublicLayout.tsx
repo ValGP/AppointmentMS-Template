@@ -174,6 +174,22 @@ export function PublicLayout() {
       <main className="public-main">
         <Outlet />
       </main>
+
+      <a
+        href="https://wa.me/5491123456789"
+        className="whatsapp-float-btn"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Contactar por WhatsApp"
+        title="Contactar por WhatsApp"
+      >
+        <img
+          src="/icon/whatsapp.png"
+          alt="WhatsApp"
+          className="whatsapp-float-img"
+        />
+      </a>
     </div>
   );
 }
+

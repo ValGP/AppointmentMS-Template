@@ -2,12 +2,17 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
+  History,
+  ListFilter,
+  X,
   XCircle,
 } from "lucide-react";
-import { type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError } from "../../../shared/api/httpClient";
 import {
+  cancelAppointmentByClient,
   getAppointments,
   type Appointment,
   type AppointmentStatus,
@@ -24,11 +29,35 @@ const statusLabels: Record<AppointmentStatus, string> = {
   NO_SHOW: "No asistio",
 };
 
+type AppointmentFilter = "all" | "pending" | "confirmed" | "history";
+
 function getStatusTone(status: AppointmentStatus) {
   if (status === "PENDING") return "is-pending";
   if (status === "CONFIRMED") return "is-confirmed";
   if (status === "COMPLETED") return "is-completed";
   return "is-muted";
+}
+
+function getStatusMessage(status: AppointmentStatus) {
+  if (status === "PENDING") {
+    return "BIBE tiene que revisar y confirmar este horario.";
+  }
+  if (status === "CONFIRMED") {
+    return "Tu turno esta confirmado.";
+  }
+  if (status === "REJECTED") {
+    return "Esta solicitud fue rechazada. Podes pedir otro turno.";
+  }
+  if (status === "CANCELED_BY_CLIENT") {
+    return "Cancelaste este turno.";
+  }
+  if (status === "CANCELED_BY_ADMIN") {
+    return "BIBE cancelo este turno.";
+  }
+  if (status === "COMPLETED") {
+    return "Este turno ya fue completado.";
+  }
+  return "Este turno quedo marcado como no asistido.";
 }
 
 function isUpcoming(appointment: Appointment) {
@@ -39,7 +68,17 @@ function isUpcoming(appointment: Appointment) {
   );
 }
 
+function canClientCancel(appointment: Appointment) {
+  return appointment.status === "PENDING" || appointment.status === "CONFIRMED";
+}
+
 export function ClientAppointmentsPage() {
+  const queryClient = useQueryClient();
+  const [activeFilter, setActiveFilter] = useState<AppointmentFilter>("all");
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
   const appointmentsQuery = useQuery({
     queryKey: ["appointments", "client"],
     queryFn: () =>
@@ -51,10 +90,96 @@ export function ClientAppointmentsPage() {
   });
 
   const appointments = appointmentsQuery.data?.content ?? [];
-  const upcomingAppointments = appointments.filter(isUpcoming);
-  const pastAppointments = appointments.filter(
-    (appointment) => !isUpcoming(appointment),
+  const sortedAppointments = useMemo(
+    () =>
+      [...appointments].sort(
+        (left, right) =>
+          new Date(left.startDateTime).getTime() -
+          new Date(right.startDateTime).getTime(),
+      ),
+    [appointments],
   );
+  const pendingAppointments = sortedAppointments.filter(
+    (appointment) => isUpcoming(appointment) && appointment.status === "PENDING",
+  );
+  const confirmedAppointments = sortedAppointments.filter(
+    (appointment) => isUpcoming(appointment) && appointment.status === "CONFIRMED",
+  );
+  const historyAppointments = sortedAppointments
+    .filter((appointment) => !isUpcoming(appointment))
+    .sort(
+      (left, right) =>
+        new Date(right.startDateTime).getTime() -
+        new Date(left.startDateTime).getTime(),
+    );
+  const filters: Array<{
+    count: number;
+    label: string;
+    value: AppointmentFilter;
+  }> = [
+    { value: "all", label: "Todos", count: appointments.length },
+    { value: "pending", label: "Pendientes", count: pendingAppointments.length },
+    {
+      value: "confirmed",
+      label: "Confirmados",
+      count: confirmedAppointments.length,
+    },
+    { value: "history", label: "Historial", count: historyAppointments.length },
+  ];
+  const shouldShowPending = activeFilter === "all" || activeFilter === "pending";
+  const shouldShowConfirmed =
+    activeFilter === "all" || activeFilter === "confirmed";
+  const shouldShowHistory = activeFilter === "all" || activeFilter === "history";
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
+      cancelAppointmentByClient(id, { reason }),
+    onSuccess: async (appointment) => {
+      setCancelTarget(null);
+      setCancelReason("");
+      setCancelError(null);
+      setCancelSuccess(`${appointment.serviceName} fue cancelado correctamente.`);
+      await queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+    onError: (error) => {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : "No pudimos cancelar el turno. Proba nuevamente.";
+      setCancelError(message);
+    },
+  });
+
+  function openCancelModal(appointment: Appointment) {
+    setCancelTarget(appointment);
+    setCancelReason("");
+    setCancelError(null);
+    setCancelSuccess(null);
+  }
+
+  function closeCancelModal() {
+    if (cancelMutation.isPending) {
+      return;
+    }
+
+    setCancelTarget(null);
+    setCancelReason("");
+    setCancelError(null);
+  }
+
+  function submitCancel() {
+    if (!cancelTarget) {
+      return;
+    }
+
+    const reason = cancelReason.trim();
+    if (!reason) {
+      setCancelError("Contanos brevemente el motivo de la cancelacion.");
+      return;
+    }
+
+    cancelMutation.mutate({ id: cancelTarget.id, reason });
+  }
 
   return (
     <section className="client-appointments-page">
@@ -87,6 +212,13 @@ export function ClientAppointmentsPage() {
         </div>
       ) : null}
 
+      {cancelSuccess ? (
+        <div className="client-action-success">
+          <CheckCircle2 aria-hidden="true" size={20} />
+          <span>{cancelSuccess}</span>
+        </div>
+      ) : null}
+
       {!appointmentsQuery.isLoading &&
       !appointmentsQuery.isError &&
       appointments.length === 0 ? (
@@ -100,22 +232,184 @@ export function ClientAppointmentsPage() {
       ) : null}
 
       {appointments.length > 0 ? (
-        <div className="client-appointments-grid">
-          <AppointmentSection
-            appointments={upcomingAppointments}
-            emptyText="No tenes turnos proximos pendientes o confirmados."
-            icon={<Clock aria-hidden="true" size={20} />}
-            title="Proximos turnos"
-          />
-          <AppointmentSection
-            appointments={pastAppointments}
-            emptyText="Todavia no hay historial para mostrar."
-            icon={<CheckCircle2 aria-hidden="true" size={20} />}
-            title="Historial"
-          />
+        <>
+          <div className="client-appointments-summary">
+            <SummaryCard
+              label="Pendientes"
+              value={pendingAppointments.length}
+              description="Esperan confirmacion de BIBE."
+            />
+            <SummaryCard
+              label="Confirmados"
+              value={confirmedAppointments.length}
+              description="Proximos turnos confirmados."
+            />
+            <SummaryCard
+              label="Historial"
+              value={historyAppointments.length}
+              description="Turnos pasados o cerrados."
+            />
+          </div>
+
+          <div className="client-filter-bar" aria-label="Filtros de turnos">
+            <span>
+              <ListFilter aria-hidden="true" size={16} />
+              Filtrar
+            </span>
+            {filters.map((filter) => (
+              <button
+                className={activeFilter === filter.value ? "is-active" : ""}
+                key={filter.value}
+                type="button"
+                onClick={() => setActiveFilter(filter.value)}
+              >
+                {filter.label}
+                <strong>{filter.count}</strong>
+              </button>
+            ))}
+          </div>
+
+          <div className="client-appointments-grid">
+            {shouldShowPending ? (
+              <AppointmentSection
+                appointments={pendingAppointments}
+                emptyText="No tenes turnos pendientes de confirmacion."
+                icon={<Clock aria-hidden="true" size={20} />}
+                onCancel={openCancelModal}
+                title="Pendientes"
+              />
+            ) : null}
+            {shouldShowConfirmed ? (
+              <AppointmentSection
+                appointments={confirmedAppointments}
+                emptyText="No tenes turnos confirmados proximos."
+                icon={<CheckCircle2 aria-hidden="true" size={20} />}
+                onCancel={openCancelModal}
+                title="Confirmados"
+              />
+            ) : null}
+            {shouldShowHistory ? (
+              <AppointmentSection
+                appointments={historyAppointments}
+                emptyText="Todavia no hay historial para mostrar."
+                icon={<History aria-hidden="true" size={20} />}
+                onCancel={openCancelModal}
+                title="Historial"
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
+
+      {cancelTarget ? (
+        <div
+          className="client-modal-backdrop"
+          role="presentation"
+          onClick={closeCancelModal}
+        >
+          <section
+            aria-modal="true"
+            aria-labelledby="client-cancel-title"
+            className="client-confirm-modal"
+            role="dialog"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              aria-label="Cerrar cancelacion"
+              className="client-modal-close"
+              type="button"
+              onClick={closeCancelModal}
+            >
+              <X aria-hidden="true" size={20} />
+            </button>
+
+            <span>
+              {cancelTarget.status === "PENDING"
+                ? "Cancelar solicitud"
+                : "Cancelar turno"}
+            </span>
+            <h2 id="client-cancel-title">
+              {cancelTarget.status === "PENDING"
+                ? "Vas a cancelar esta solicitud."
+                : "Vas a cancelar este turno."}
+            </h2>
+            <p className="client-confirmation-hint">
+              <XCircle aria-hidden="true" size={16} />
+              Esta accion libera el horario y no se puede deshacer desde el panel.
+            </p>
+
+            <dl>
+              <div>
+                <dt>Servicio</dt>
+                <dd>{cancelTarget.serviceName}</dd>
+              </div>
+              <div>
+                <dt>Profesional</dt>
+                <dd>{cancelTarget.professionalName}</dd>
+              </div>
+              <div>
+                <dt>Dia y horario</dt>
+                <dd>{formatShortDateTime(cancelTarget.startDateTime)}</dd>
+              </div>
+            </dl>
+
+            <label className="client-notes-field">
+              <span>Motivo de cancelacion</span>
+              <textarea
+                maxLength={500}
+                rows={4}
+                value={cancelReason}
+                onChange={(event) => {
+                  setCancelReason(event.target.value);
+                  setCancelError(null);
+                }}
+                placeholder="Ejemplo: No voy a poder asistir en ese horario."
+              />
+              <small>{cancelReason.length}/500 caracteres</small>
+            </label>
+
+            {cancelError ? <p className="client-form-error">{cancelError}</p> : null}
+
+            <div className="client-modal-actions">
+              <button
+                className="client-secondary-action"
+                disabled={cancelMutation.isPending}
+                type="button"
+                onClick={closeCancelModal}
+              >
+                Volver
+              </button>
+              <button
+                className="client-danger-action"
+                disabled={cancelMutation.isPending}
+                type="button"
+                onClick={submitCancel}
+              >
+                {cancelMutation.isPending ? "Cancelando..." : "Confirmar cancelacion"}
+              </button>
+            </div>
+          </section>
         </div>
       ) : null}
     </section>
+  );
+}
+
+function SummaryCard({
+  description,
+  label,
+  value,
+}: {
+  description: string;
+  label: string;
+  value: number;
+}) {
+  return (
+    <article className="client-summary-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <p>{description}</p>
+    </article>
   );
 }
 
@@ -123,11 +417,13 @@ function AppointmentSection({
   appointments,
   emptyText,
   icon,
+  onCancel,
   title,
 }: {
   appointments: Appointment[];
   emptyText: string;
   icon: ReactNode;
+  onCancel: (appointment: Appointment) => void;
   title: string;
 }) {
   return (
@@ -142,7 +438,11 @@ function AppointmentSection({
       ) : (
         <div className="client-appointment-list">
           {appointments.map((appointment) => (
-            <AppointmentCard appointment={appointment} key={appointment.id} />
+            <AppointmentCard
+              appointment={appointment}
+              key={appointment.id}
+              onCancel={onCancel}
+            />
           ))}
         </div>
       )}
@@ -150,8 +450,15 @@ function AppointmentSection({
   );
 }
 
-function AppointmentCard({ appointment }: { appointment: Appointment }) {
+function AppointmentCard({
+  appointment,
+  onCancel,
+}: {
+  appointment: Appointment;
+  onCancel: (appointment: Appointment) => void;
+}) {
   const statusTone = getStatusTone(appointment.status);
+  const cancelable = canClientCancel(appointment);
 
   return (
     <article className="client-appointment-card">
@@ -168,6 +475,9 @@ function AppointmentCard({ appointment }: { appointment: Appointment }) {
         </span>
         <h3>{appointment.serviceName}</h3>
         <p>{formatShortDateTime(appointment.startDateTime)}</p>
+        <small className="client-status-message">
+          {getStatusMessage(appointment.status)}
+        </small>
       </div>
 
       <dl>
@@ -180,6 +490,16 @@ function AppointmentCard({ appointment }: { appointment: Appointment }) {
           <dd>{appointment.notes || "Sin notas"}</dd>
         </div>
       </dl>
+
+      {cancelable ? (
+        <button
+          className="client-cancel-appointment-button"
+          type="button"
+          onClick={() => onCancel(appointment)}
+        >
+          {appointment.status === "PENDING" ? "Cancelar solicitud" : "Cancelar turno"}
+        </button>
+      ) : null}
     </article>
   );
 }

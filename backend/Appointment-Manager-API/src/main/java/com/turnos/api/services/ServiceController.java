@@ -6,6 +6,7 @@ import com.turnos.api.professionals.ServiceProfessionalsAssignmentRequest;
 import com.turnos.api.professionals.ServiceProfessionalsAssignmentResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,14 +44,22 @@ public class ServiceController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
-    public List<ServiceResponse> findAll(@RequestParam(required = false) Long professionalId) {
+    @Transactional(readOnly = true)
+    public List<ServiceResponse> findAll(
+            @RequestParam(required = false) Long professionalId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "false") boolean onlineBookableOnly
+    ) {
         if (professionalId != null) {
             return professionalServiceAssignmentService.findServicesForProfessional(professionalId).stream()
+                    .filter(service -> categoryId == null
+                            || (service.getCategory() != null && categoryId.equals(service.getCategory().getId())))
+                    .filter(service -> !onlineBookableOnly || service.canBeBookedOnline())
                     .map(ServiceResponse::from)
                     .toList();
         }
 
-        return serviceCatalogService.findAll();
+        return serviceCatalogService.findAll(categoryId, onlineBookableOnly);
     }
 
     @GetMapping("/{id}")

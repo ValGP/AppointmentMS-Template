@@ -15,10 +15,22 @@ class ServiceTest {
 
         assertThat(service.hasValidDuration()).isTrue();
         assertThat(service.canBeBooked()).isTrue();
+        assertThat(service.canBeBookedOnline()).isTrue();
 
         service.deactivate();
 
         assertThat(service.canBeBooked()).isFalse();
+        assertThat(service.canBeBookedOnline()).isFalse();
+    }
+
+    @Test
+    void requiresEvaluationDisablesOnlineBooking() {
+        Service service = new Service("PRP", null, 45, BigDecimal.valueOf(2000), null, true, true);
+
+        assertThat(service.isRequiresEvaluation()).isTrue();
+        assertThat(service.isOnlineBookable()).isFalse();
+        assertThat(service.canBeBooked()).isTrue();
+        assertThat(service.canBeBookedOnline()).isFalse();
     }
 
     @Test

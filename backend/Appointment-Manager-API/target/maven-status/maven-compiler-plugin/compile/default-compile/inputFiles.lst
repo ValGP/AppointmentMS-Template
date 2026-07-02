@@ -27,6 +27,7 @@ C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\auth\LoginRequest.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\auth\package-info.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\auth\RegisterRequest.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\auth\UpdateCurrentUserRequest.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\availability\AvailabilityBlock.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\availability\AvailabilityBlockController.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\availability\AvailabilityBlockRepository.java
@@ -76,6 +77,12 @@ C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\package-info.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\Service.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCatalogService.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCategory.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCategoryController.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCategoryRepository.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCategoryRequest.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCategoryResponse.java
+C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceCategoryService.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceController.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceRepository.java
 C:\Users\vale-\CodeProjects\Freelance\BIBE-estetica\backend\Appointment-Manager-API\src\main\java\com\turnos\api\services\ServiceRequest.java

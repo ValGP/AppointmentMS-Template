@@ -126,6 +126,47 @@ class AppointmentControllerTest {
     }
 
     @Test
+    void clientCannotCreateAppointmentForServiceThatIsNotOnlineBookable() throws Exception {
+        Fixture fixture = fixture("client-not-online-bookable", false, false);
+        String clientToken = registerClient("client.not.online.bookable@email.com");
+
+        mockMvc.perform(post("/api/appointments")
+                        .header("Authorization", "Bearer " + clientToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "professionalId": %d,
+                                  "serviceId": %d,
+                                  "startDateTime": "2027-05-24T10:00:00"
+                                }
+                                """.formatted(fixture.professional().getId(), fixture.service().getId())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Service is not available for online booking"));
+    }
+
+    @Test
+    void adminCanCreateAppointmentForServiceThatIsNotOnlineBookable() throws Exception {
+        Fixture fixture = fixture("admin-not-online-bookable", false, false);
+        User client = createClient("admin.not.online.bookable.client@email.com");
+        String adminToken = login("admin@turnos.local", "admin1234");
+
+        mockMvc.perform(post("/api/appointments")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "clientId": %d,
+                                  "professionalId": %d,
+                                  "serviceId": %d,
+                                  "startDateTime": "2027-05-24T10:00:00"
+                                }
+                                """.formatted(client.getId(), fixture.professional().getId(), fixture.service().getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.createdByRole").value("ADMIN"));
+    }
+
+    @Test
     void rejectsAppointmentOutsideBusinessHours() throws Exception {
         Fixture fixture = fixture("outside-hours");
         String clientToken = registerClient("outside.hours.client@email.com");
@@ -354,6 +395,10 @@ class AppointmentControllerTest {
     }
 
     private Fixture fixture(String suffix) {
+        return fixture(suffix, true, false);
+    }
+
+    private Fixture fixture(String suffix, boolean onlineBookable, boolean requiresEvaluation) {
         Professional professional = professionalRepository.save(new Professional(
                 "Professional " + suffix,
                 suffix + ".professional@email.com",
@@ -363,7 +408,10 @@ class AppointmentControllerTest {
                 "Service " + suffix,
                 null,
                 30,
-                BigDecimal.valueOf(1000)
+                BigDecimal.valueOf(1000),
+                null,
+                onlineBookable,
+                requiresEvaluation
         ));
         businessHoursRepository.save(new BusinessHours(
                 professional,

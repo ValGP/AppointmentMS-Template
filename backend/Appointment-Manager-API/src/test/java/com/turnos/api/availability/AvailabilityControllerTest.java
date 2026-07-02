@@ -150,8 +150,9 @@ class AvailabilityControllerTest {
         inactiveProfessionalFixture.professional().deactivate();
         professionalRepository.save(inactiveProfessionalFixture.professional());
         Fixture inactiveServiceFixture = fixture("availability-inactive-service", 60);
-        inactiveServiceFixture.service().deactivate();
-        serviceRepository.save(inactiveServiceFixture.service());
+        Service inactiveService = serviceRepository.findById(inactiveServiceFixture.service().getId()).orElseThrow();
+        inactiveService.deactivate();
+        serviceRepository.save(inactiveService);
         String token = registerClient("availability.inactive.viewer@email.com");
 
         mockMvc.perform(get("/api/availability")

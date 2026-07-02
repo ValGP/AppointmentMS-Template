@@ -22,8 +22,8 @@ El frontend se pensara en tres superficies principales:
 - [x] Fase 4.3 - Seguridad operativa y mejoras UX del admin.
 - [x] Fase 4.4 - Pulido operativo avanzado del admin.
 - [x] Fase 4.5 - Correcciones UX post-prueba del admin.
-- [ ] Fase 5 - Flujo cliente para solicitar turno.
-- [ ] Fase 6 - Area cliente.
+- [x] Fase 5 - Flujo cliente para solicitar turno.
+- [ ] Fase 6 - Area cliente. Iniciada.
 - [ ] Fase 7 - Sitio publico y definicion estetica. Iniciada.
 - [ ] Fase 8 - Pulido y calidad.
 
@@ -1252,11 +1252,144 @@ Salida esperada:
 
 ### Fase 6 - Area cliente
 
+Estado: iniciada.
+
 Objetivo:
 
-Completar la experiencia minima del cliente.
+Completar la experiencia minima del cliente despues de que ya existe el flujo para pedir turno. La idea es que el cliente no solo pueda solicitar un turno, sino tambien entender su estado, revisar su historial, cancelar cuando corresponda y tener una zona de perfil clara.
+
+#### Fase 6.1 - Pulido de Mis turnos
+
+Estado: implementada.
+
+Objetivo:
+
+Mejorar la pantalla `/app/appointments` para que el cliente pueda leer rapidamente que turnos tiene pendientes, confirmados o historicos.
 
 Tareas:
+
+- [x] Mejorar jerarquia visual de la pantalla `Mis turnos`.
+- [x] Separar proximos turnos, pendientes, confirmados e historial de forma clara.
+- [x] Agregar filtros simples por estado.
+- [x] Mostrar mensajes mas especificos segun estado del turno.
+- [x] Mantener boton claro para pedir otro turno.
+- [x] Revisar responsive de la pantalla.
+
+Salida esperada:
+
+- El cliente entiende el estado de sus turnos sin depender de leer detalles tecnicos.
+
+#### Fase 6.2 - Perfil del cliente
+
+Estado: implementada.
+
+Objetivo:
+
+Reemplazar el placeholder de `/app/profile` por una pantalla real de datos basicos.
+
+Tareas:
+
+- [x] Mostrar nombre y email del usuario.
+- [x] Mostrar telefono si el backend lo devuelve.
+- [x] Mostrar estado/rol de cuenta de forma simple.
+- [x] Preparar estructura para futura edicion de datos personales.
+- [x] Agregar mensajes claros sobre cambios que aun dependan del admin o backend.
+
+Salida esperada:
+
+- El cliente tiene una pantalla de perfil coherente aunque la edicion completa quede para una fase posterior.
+
+#### Fase 6.3 - Fixes del flujo de reserva
+
+Estado: implementada.
+
+Objetivo:
+
+Resolver ajustes detectados al probar la Fase 5 en uso real.
+
+Tareas:
+
+- [x] Revisar responsive del selector de servicios, profesionales y horarios.
+- [x] Revisar mensajes de error de disponibilidad y creacion de turno.
+- [x] Mejorar comportamiento despues de solicitar turno si algo queda confuso.
+- [x] Revisar casos sin disponibilidad o sin profesionales compatibles.
+- [x] Ajustar textos para que sean mas humanos y menos tecnicos.
+- [x] Mover la confirmacion exitosa a una subpagina propia posterior a la solicitud.
+- [x] Abrir confirmacion de solicitud en modal al seleccionar un horario.
+
+Salida esperada:
+
+- El flujo de reserva queda mas claro y resistente a casos vacios o errores.
+
+#### Fase 6.4 - Cancelacion de turno por cliente
+
+Estado: implementada.
+
+Objetivo:
+
+Permitir que el cliente cancele turnos propios cuando el backend lo soporte y el estado del turno lo permita.
+
+Tareas:
+
+- [x] Agregar accion de cancelar en turnos cancelables.
+- [x] Pedir confirmacion antes de cancelar.
+- [x] Agregar motivo si el backend lo requiere o permite.
+- [x] Mostrar feedback claro despues de cancelar.
+- [x] Actualizar `Mis turnos` sin recargar la pagina.
+
+Salida esperada:
+
+- El cliente puede cancelar sin llamar al admin, pero con confirmacion para evitar errores.
+
+#### Fase 6.5 - Prueba completa cliente-admin
+
+Estado: implementada.
+
+Objetivo:
+
+Verificar el ciclo completo entre cliente y administrador.
+
+Tareas:
+
+- [x] Cliente solicita turno.
+- [x] Cliente ve turno pendiente en `Mis turnos`.
+- [x] Admin ve solicitud pendiente.
+- [x] Admin confirma o rechaza.
+- [x] Cliente ve cambio de estado.
+- [x] Cliente cancela cuando corresponda.
+- [x] Revisar desktop, tablet y mobile.
+
+Salida esperada:
+
+- El circuito cliente-admin queda validado como flujo MVP.
+
+#### Fase 6.6 - Edicion de perfil del cliente
+
+Estado: implementada.
+
+Objetivo:
+
+Permitir que el cliente edite sus datos personales basicos desde `/app/profile`, diferenciando claramente que datos puede cambiar por su cuenta y cuales requieren decision de seguridad o soporte de backend.
+
+Tareas:
+
+- [x] Revisar si el backend ya tiene endpoint para que el cliente edite su propio perfil.
+- [x] Si no existe endpoint, definir contrato backend necesario para editar perfil propio.
+- [x] Permitir editar nombre completo.
+- [x] Permitir editar telefono.
+- [x] Definir si el email se puede cambiar desde cliente o queda bloqueado por seguridad.
+- [x] Si email queda bloqueado, mostrarlo como dato de cuenta no editable.
+- [x] Validar campos antes de enviar.
+- [x] Guardar cambios contra backend.
+- [x] Mostrar feedback claro de exito o error.
+- [x] Refrescar `/api/users/me` despues de guardar para actualizar el header y el perfil.
+- [x] Revisar responsive del formulario de edicion.
+
+Salida esperada:
+
+- El cliente puede mantener sus datos basicos actualizados sin depender del admin, siempre que el backend lo permita.
+
+Tareas generales:
 
 - Mis turnos.
 - Cancelar turno propio.

@@ -1,16 +1,17 @@
 import {
   ArrowRight,
   CalendarDays,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Info,
   Sparkles,
   UserRoundCheck,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ApiError } from "../../../shared/api/httpClient";
 import {
   addDays,
@@ -19,7 +20,6 @@ import {
 } from "../../../shared/utils/date";
 import {
   createAppointment,
-  type Appointment,
   type AppointmentPayload,
 } from "../../appointments/api/appointmentsApi";
 import {
@@ -30,6 +30,10 @@ import {
   getProfessionals,
   type Professional,
 } from "../../professionals/api/professionalsApi";
+import {
+  getServiceCategories,
+  type ServiceCategory,
+} from "../../services/api/serviceCategoriesApi";
 import {
   getServices,
   type ServiceCatalogItem,
@@ -87,23 +91,48 @@ function formatSlotSummary(slot: AvailabilitySlot) {
   return `${day}, ${formatTime(slot.startDateTime)} a ${formatTime(slot.endDateTime)}`;
 }
 
+function getCreateErrorMessage(error: unknown) {
+  if (!(error instanceof ApiError)) {
+    return "No pudimos solicitar el turno. Proba nuevamente en unos minutos.";
+  }
+
+  const message = error.message.toLowerCase();
+
+  if (message.includes("overlap") || message.includes("availability")) {
+    return "Ese horario dejo de estar disponible. Elegi otro turno y volve a intentarlo.";
+  }
+
+  if (message.includes("inactive")) {
+    return "El servicio, profesional o cliente ya no esta disponible para nuevos turnos.";
+  }
+
+  return error.message || "No pudimos solicitar el turno. Proba nuevamente.";
+}
+
 export function ClientBookPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<number | null>(
     null,
   );
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const [createdAppointment, setCreatedAppointment] = useState<Appointment | null>(
-    null,
-  );
+
+  const categoriesQuery = useQuery({
+    queryKey: ["client-service-categories"],
+    queryFn: getServiceCategories,
+  });
 
   const servicesQuery = useQuery({
-    queryKey: ["client-services"],
-    queryFn: () => getServices(),
+    queryKey: ["client-services", selectedCategoryId],
+    enabled: selectedCategoryId !== null,
+    queryFn: () =>
+      getServices({ categoryId: selectedCategoryId!, onlineBookableOnly: true }),
   });
 
   const professionalsQuery = useQuery({
@@ -113,9 +142,18 @@ export function ClientBookPage() {
   });
 
   const activeServices = useMemo(
-    () => (servicesQuery.data ?? []).filter((service) => service.active),
-    [servicesQuery.data],
+    () =>
+      selectedCategoryId === null
+        ? []
+        : (servicesQuery.data ?? []).filter((service) => service.active),
+    [selectedCategoryId, servicesQuery.data],
   );
+  const activeCategories = useMemo(
+    () => (categoriesQuery.data ?? []).filter((category) => category.active),
+    [categoriesQuery.data],
+  );
+  const selectedCategory =
+    activeCategories.find((category) => category.id === selectedCategoryId) ?? null;
   const selectedService =
     activeServices.find((service) => service.id === selectedServiceId) ?? null;
 
@@ -136,8 +174,18 @@ export function ClientBookPage() {
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
   useEffect(() => {
+    setSelectedServiceId(null);
     setSelectedProfessionalId(null);
     setSelectedSlot(null);
+    setIsConfirmOpen(false);
+    setFormError(null);
+  }, [selectedCategoryId]);
+
+  useEffect(() => {
+    setSelectedProfessionalId(null);
+    setSelectedSlot(null);
+    setIsConfirmOpen(false);
+    setFormError(null);
   }, [selectedServiceId]);
 
   useEffect(() => {
@@ -148,6 +196,8 @@ export function ClientBookPage() {
 
   useEffect(() => {
     setSelectedSlot(null);
+    setIsConfirmOpen(false);
+    setFormError(null);
   }, [selectedProfessionalId, weekOffset]);
 
   const availabilityQueries = useQueries({
@@ -187,7 +237,6 @@ export function ClientBookPage() {
   const createMutation = useMutation({
     mutationFn: (payload: AppointmentPayload) => createAppointment(payload),
     onSuccess: async (appointment) => {
-      setCreatedAppointment(appointment);
       setFormError(null);
       setNotes("");
       setSelectedSlot(null);
@@ -195,13 +244,10 @@ export function ClientBookPage() {
         queryClient.invalidateQueries({ queryKey: ["client-availability"] }),
         queryClient.invalidateQueries({ queryKey: ["appointments"] }),
       ]);
+      navigate("/app/book/success", { state: { appointment } });
     },
     onError: (error) => {
-      const message =
-        error instanceof ApiError
-          ? error.message
-          : "No pudimos solicitar el turno. Proba nuevamente.";
-      setFormError(message);
+      setFormError(getCreateErrorMessage(error));
     },
   });
 
@@ -219,13 +265,18 @@ export function ClientBookPage() {
     });
   }
 
-  function handleNewRequest() {
-    setCreatedAppointment(null);
-    setSelectedServiceId(null);
-    setSelectedProfessionalId(null);
-    setSelectedSlot(null);
-    setWeekOffset(0);
-    setNotes("");
+  function handleSelectSlot(slot: AvailabilitySlot) {
+    setSelectedSlot(slot);
+    setIsConfirmOpen(true);
+    setFormError(null);
+  }
+
+  function closeConfirmModal() {
+    if (createMutation.isPending) {
+      return;
+    }
+
+    setIsConfirmOpen(false);
     setFormError(null);
   }
 
@@ -236,8 +287,8 @@ export function ClientBookPage() {
           <p className="public-pill">Reservar turno</p>
           <h1>Elegi el servicio para empezar.</h1>
           <p>
-            Primero selecciona que tratamiento queres consultar. Despues vamos a
-            mostrar profesionales compatibles, disponibilidad y horarios.
+            Selecciona tratamiento, profesional y horario. La solicitud queda
+            pendiente hasta que BIBE confirme el turno.
           </p>
         </div>
         <div className="client-book-status">
@@ -250,29 +301,81 @@ export function ClientBookPage() {
         <div className="client-book-card">
           <div className="client-section-heading">
             <span>Paso 1</span>
+            <h2>Selecciona una categoria</h2>
+          </div>
+
+          {categoriesQuery.isLoading ? (
+            <div className="client-empty-state">
+              <strong>Cargando categorias...</strong>
+              <p>Estamos ordenando los tratamientos disponibles.</p>
+            </div>
+          ) : null}
+
+          {categoriesQuery.isError ? (
+            <div className="client-empty-state tone-danger">
+              <strong>No pudimos cargar las categorias.</strong>
+              <p>Proba recargar la pagina o intenta nuevamente en unos minutos.</p>
+            </div>
+          ) : null}
+
+          {!categoriesQuery.isLoading &&
+          !categoriesQuery.isError &&
+          activeCategories.length === 0 ? (
+            <div className="client-empty-state">
+              <strong>Todavia no hay categorias disponibles.</strong>
+              <p>Cuando BIBE habilite categorias activas, van a aparecer aca.</p>
+            </div>
+          ) : null}
+
+          {activeCategories.length > 0 ? (
+            <div className="client-service-grid">
+              {activeCategories.map((category) => (
+                <CategoryOption
+                  category={category}
+                  key={category.id}
+                  selected={category.id === selectedCategoryId}
+                  onSelect={() => setSelectedCategoryId(category.id)}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="client-professional-section">
+            <div className="client-section-heading">
+              <span>Paso 2</span>
             <h2>Selecciona un servicio</h2>
           </div>
 
-          {servicesQuery.isLoading ? (
+          {!selectedCategory ? (
+            <div className="client-empty-state">
+              <strong>Primero selecciona una categoria.</strong>
+              <p>Despues vamos a mostrar solo sus servicios activos.</p>
+            </div>
+          ) : null}
+
+          {selectedCategory && servicesQuery.isLoading ? (
             <div className="client-empty-state">
               <strong>Cargando servicios...</strong>
               <p>Estamos buscando los tratamientos disponibles para reserva.</p>
             </div>
           ) : null}
 
-          {servicesQuery.isError ? (
+          {selectedCategory && servicesQuery.isError ? (
             <div className="client-empty-state tone-danger">
               <strong>No pudimos cargar los servicios.</strong>
               <p>Proba recargar la pagina o intenta nuevamente en unos minutos.</p>
             </div>
           ) : null}
 
-          {!servicesQuery.isLoading &&
+          {selectedCategory &&
+          !servicesQuery.isLoading &&
           !servicesQuery.isError &&
           activeServices.length === 0 ? (
             <div className="client-empty-state">
-              <strong>Todavia no hay servicios disponibles.</strong>
-              <p>Cuando BIBE habilite servicios activos, van a aparecer aca.</p>
+              <strong>
+                No hay servicios disponibles para reserva online en esta categoria.
+              </strong>
+              <p>Consultanos para coordinar una alternativa.</p>
             </div>
           ) : null}
 
@@ -289,9 +392,11 @@ export function ClientBookPage() {
             </div>
           ) : null}
 
+          </div>
+
           <div className="client-professional-section">
             <div className="client-section-heading">
-              <span>Paso 2</span>
+              <span>Paso 3</span>
               <h2>Elegi profesional</h2>
             </div>
 
@@ -345,7 +450,7 @@ export function ClientBookPage() {
 
           <div className="client-availability-section">
             <div className="client-section-heading">
-              <span>Paso 3</span>
+              <span>Paso 4</span>
               <h2>Elegi un horario</h2>
             </div>
 
@@ -373,6 +478,9 @@ export function ClientBookPage() {
                   <div>
                     <span>Semana visible</span>
                     <strong>{formatWeekRange(weekStart)}</strong>
+                    <small>
+                      {weekOffset === 0 ? "Semana actual" : "Semana proxima"}
+                    </small>
                   </div>
                   <button
                     type="button"
@@ -403,7 +511,10 @@ export function ClientBookPage() {
                 availableSlotCount === 0 ? (
                   <div className="client-empty-state">
                     <strong>No hay horarios disponibles esta semana.</strong>
-                    <p>Proba con la otra semana visible o consultanos para coordinar.</p>
+                    <p>
+                      Proba con la otra semana visible. Si tampoco hay horarios,
+                      consultanos para coordinar una alternativa.
+                    </p>
                   </div>
                 ) : null}
 
@@ -415,7 +526,7 @@ export function ClientBookPage() {
                         day={day}
                         selectedSlot={selectedSlot}
                         slots={availabilityByDay[day.dateKey] ?? []}
-                        onSelectSlot={setSelectedSlot}
+                        onSelectSlot={handleSelectSlot}
                       />
                     ))}
                   </div>
@@ -428,6 +539,19 @@ export function ClientBookPage() {
         <aside className="client-next-panel">
           <p className="public-pill">Tu solicitud</p>
           <h2>Resumen inicial</h2>
+
+          {selectedService ? (
+            <div className="client-selected-service">
+              <span>Categoria seleccionada</span>
+              <strong>{selectedCategory?.name ?? "Sin categoria"}</strong>
+            </div>
+          ) : selectedCategory ? (
+            <div className="client-selected-service">
+              <span>Categoria seleccionada</span>
+              <strong>{selectedCategory.name}</strong>
+              <small>Ahora elegi un servicio de esta categoria.</small>
+            </div>
+          ) : null}
 
           {selectedService ? (
             <div className="client-selected-service">
@@ -466,6 +590,7 @@ export function ClientBookPage() {
           ) : null}
 
           <div className="client-flow-preview">
+            <span className={selectedCategory ? "is-ready" : ""}>Categoria</span>
             <span className={selectedService ? "is-ready" : ""}>Servicio</span>
             <span className={selectedProfessional ? "is-ready" : ""}>Profesional</span>
             <span className={selectedSlot ? "is-ready" : ""}>Horario</span>
@@ -476,67 +601,85 @@ export function ClientBookPage() {
             className="client-primary-action"
             type="button"
             disabled={!selectedService || !selectedProfessional || !selectedSlot}
-            onClick={() => {
-              document
-                .querySelector(".client-confirmation-box")
-                ?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
+            onClick={() => setIsConfirmOpen(true)}
           >
             Revisar solicitud
             <ArrowRight aria-hidden="true" size={18} />
           </button>
+        </aside>
+      </div>
 
-          {createdAppointment ? (
-            <div className="client-success-box">
-              <CheckCircle2 aria-hidden="true" size={24} />
-              <div>
-                <strong>Turno solicitado correctamente.</strong>
-                <p>
-                  Quedo pendiente de confirmacion. BIBE va a revisar la solicitud y
-                  confirmar el horario.
-                </p>
-                <small>Solicitud #{createdAppointment.id}</small>
-              </div>
-              <div className="client-success-actions">
-                <Link to="/app/appointments">Ver mis turnos</Link>
-                <button type="button" onClick={handleNewRequest}>
-                  Solicitar otro turno
-                </button>
-              </div>
-            </div>
-          ) : null}
+      {selectedService && selectedProfessional && selectedSlot && isConfirmOpen ? (
+        <div
+          className="client-modal-backdrop"
+          role="presentation"
+          onClick={closeConfirmModal}
+        >
+          <section
+            aria-modal="true"
+            aria-labelledby="client-confirm-title"
+            className="client-confirm-modal"
+            role="dialog"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              aria-label="Cerrar confirmacion"
+              className="client-modal-close"
+              type="button"
+              onClick={closeConfirmModal}
+            >
+              <X aria-hidden="true" size={20} />
+            </button>
 
-          {selectedService && selectedProfessional && selectedSlot ? (
-            <div className="client-confirmation-box">
-              <span>Confirmacion</span>
-              <strong>Revisa antes de solicitar</strong>
-              <dl>
+            <span>Confirmacion</span>
+            <h2 id="client-confirm-title">Revisa tu solicitud</h2>
+            <p className="client-confirmation-hint">
+              <Info aria-hidden="true" size={16} />
+              BIBE debe confirmar la solicitud antes de que el turno quede cerrado.
+            </p>
+
+            <dl>
+                <div>
+                  <dt>Categoria</dt>
+                  <dd>{selectedCategory?.name ?? "Sin categoria"}</dd>
+                </div>
                 <div>
                   <dt>Servicio</dt>
-                  <dd>{selectedService.name}</dd>
-                </div>
-                <div>
-                  <dt>Profesional</dt>
-                  <dd>{selectedProfessional.fullName}</dd>
-                </div>
-                <div>
-                  <dt>Dia y horario</dt>
-                  <dd>{formatSlotSummary(selectedSlot)}</dd>
-                </div>
-              </dl>
-              <label className="client-notes-field">
-                <span>Notas para BIBE (opcional)</span>
-                <textarea
-                  maxLength={500}
-                  rows={4}
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Contanos si queres agregar alguna aclaracion."
-                />
-              </label>
+                <dd>{selectedService.name}</dd>
+              </div>
+              <div>
+                <dt>Profesional</dt>
+                <dd>{selectedProfessional.fullName}</dd>
+              </div>
+              <div>
+                <dt>Dia y horario</dt>
+                <dd>{formatSlotSummary(selectedSlot)}</dd>
+              </div>
+            </dl>
 
-              {formError ? <p className="client-form-error">{formError}</p> : null}
+            <label className="client-notes-field">
+              <span>Notas para BIBE (opcional)</span>
+              <textarea
+                maxLength={500}
+                rows={4}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Contanos si queres agregar alguna aclaracion."
+              />
+              <small>{notes.length}/500 caracteres</small>
+            </label>
 
+            {formError ? <p className="client-form-error">{formError}</p> : null}
+
+            <div className="client-modal-actions">
+              <button
+                className="client-secondary-action"
+                disabled={createMutation.isPending}
+                type="button"
+                onClick={closeConfirmModal}
+              >
+                Elegir otro horario
+              </button>
               <button
                 className="client-primary-action"
                 type="button"
@@ -547,9 +690,9 @@ export function ClientBookPage() {
                 <ArrowRight aria-hidden="true" size={18} />
               </button>
             </div>
-          ) : null}
-        </aside>
-      </div>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -578,6 +721,30 @@ function ServiceOption({
         <Clock aria-hidden="true" size={14} />
         {service.durationMinutes} minutos
       </small>
+    </button>
+  );
+}
+
+function CategoryOption({
+  category,
+  onSelect,
+  selected,
+}: {
+  category: ServiceCategory;
+  onSelect: () => void;
+  selected: boolean;
+}) {
+  return (
+    <button
+      className={`client-service-option ${selected ? "is-selected" : ""}`}
+      type="button"
+      onClick={onSelect}
+    >
+      <span>
+        <Sparkles aria-hidden="true" size={20} />
+      </span>
+      <strong>{category.name}</strong>
+      <p>{category.description || "Categoria de tratamientos disponibles."}</p>
     </button>
   );
 }

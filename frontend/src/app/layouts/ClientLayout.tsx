@@ -1,9 +1,11 @@
-import { CalendarCheck, Clock, LogOut, UserRound } from "lucide-react";
+import { CalendarCheck, Clock, LogOut, Menu, UserRound, X } from "lucide-react";
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../../features/auth/context/AuthProvider";
 
 export function ClientLayout() {
   const { logout, user } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const initials =
     user?.fullName
       ?.split(" ")
@@ -15,6 +17,15 @@ export function ClientLayout() {
 
   return (
     <div className="client-shell">
+      {isMenuOpen ? (
+        <button
+          aria-label="Cerrar menu"
+          className="client-menu-backdrop"
+          type="button"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      ) : null}
+
       <header className="client-header">
         <NavLink className="client-brand" to="/app/book" aria-label="BIBE cliente">
           <span className="brand-logo">
@@ -22,16 +33,19 @@ export function ClientLayout() {
           </span>
         </NavLink>
 
-        <nav className="client-nav" aria-label="Navegacion de cliente">
-          <NavLink to="/app/book">
+        <nav
+          className={`client-nav ${isMenuOpen ? "is-open" : ""}`}
+          aria-label="Navegacion de cliente"
+        >
+          <NavLink to="/app/book" onClick={() => setIsMenuOpen(false)}>
             <CalendarCheck aria-hidden="true" size={18} />
             Pedir turno
           </NavLink>
-          <NavLink to="/app/appointments">
+          <NavLink to="/app/appointments" onClick={() => setIsMenuOpen(false)}>
             <Clock aria-hidden="true" size={18} />
             Mis turnos
           </NavLink>
-          <NavLink to="/app/profile">
+          <NavLink to="/app/profile" onClick={() => setIsMenuOpen(false)}>
             <UserRound aria-hidden="true" size={18} />
             Perfil
           </NavLink>
@@ -45,6 +59,18 @@ export function ClientLayout() {
           <span className="client-avatar">{initials}</span>
           <button type="button" onClick={logout} aria-label="Cerrar sesion">
             <LogOut aria-hidden="true" size={18} />
+          </button>
+          <button
+            className="client-menu-button"
+            type="button"
+            aria-label={isMenuOpen ? "Cerrar menu" : "Abrir menu"}
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            {isMenuOpen ? (
+              <X aria-hidden="true" size={20} />
+            ) : (
+              <Menu aria-hidden="true" size={20} />
+            )}
           </button>
         </div>
       </header>

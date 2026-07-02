@@ -23,6 +23,11 @@ export type RegisterPayload = {
   phone?: string;
 };
 
+export type UpdateCurrentUserPayload = {
+  fullName: string;
+  phone?: string;
+};
+
 export async function login(payload: LoginPayload) {
   return apiRequest<AuthResponse>("/auth/login", {
     method: "POST",
@@ -39,6 +44,13 @@ export async function registerClient(payload: RegisterPayload) {
 
 export async function getCurrentUser() {
   return apiRequest<CurrentUser>("/api/users/me");
+}
+
+export async function updateCurrentUser(payload: UpdateCurrentUserPayload) {
+  return apiRequest<CurrentUser>("/api/users/me", {
+    method: "PUT",
+    body: payload,
+  });
 }
 
 export function persistAuthResponse(response: AuthResponse): CurrentUser {

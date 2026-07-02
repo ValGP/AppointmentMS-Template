@@ -23,6 +23,7 @@ import {
   type ProfessionalPayload,
   type ServiceAssignmentMode,
 } from "../../professionals/api/professionalsApi";
+import { getServiceCategories } from "../../services/api/serviceCategoriesApi";
 import { getServices } from "../../services/api/servicesApi";
 
 type ProfessionalFormValues = {
@@ -50,6 +51,7 @@ export function AdminProfessionalsPage() {
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
   const [professionalSearch, setProfessionalSearch] = useState("");
   const [professionalSort, setProfessionalSort] = useState("name-asc");
+  const [assignmentCategoryId, setAssignmentCategoryId] = useState(0);
   const { showToast, toast } = useAdminToast();
 
   const professionalsQuery = useQuery({
@@ -59,6 +61,10 @@ export function AdminProfessionalsPage() {
   const servicesQuery = useQuery({
     queryKey: ["services"],
     queryFn: () => getServices(),
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: getServiceCategories,
   });
   const hoursQuery = useQuery({
     queryKey: ["business-hours"],
@@ -103,7 +109,14 @@ export function AdminProfessionalsPage() {
     (professional) => !professional.active,
   );
   const services = servicesQuery.data ?? [];
+  const activeCategories = (categoriesQuery.data ?? []).filter(
+    (category) => category.active,
+  );
   const activeServices = services.filter((service) => service.active);
+  const assignableServices = activeServices.filter(
+    (service) =>
+      assignmentCategoryId === 0 || service.categoryId === assignmentCategoryId,
+  );
   const activeHours = hoursQuery.data?.filter((item) => item.active) ?? [];
   const professionalsWithoutHours = new Set(
     activeProfessionals
@@ -175,6 +188,7 @@ export function AdminProfessionalsPage() {
     setFormError(null);
     setAssignmentMode("ALL_SERVICES");
     setSelectedServiceIds([]);
+    setAssignmentCategoryId(0);
     form.reset(emptyValues);
     setIsFormOpen(true);
   }
@@ -189,6 +203,7 @@ export function AdminProfessionalsPage() {
     });
     setAssignmentMode("ALL_SERVICES");
     setSelectedServiceIds([]);
+    setAssignmentCategoryId(0);
     setIsFormOpen(true);
   }
 
@@ -197,6 +212,7 @@ export function AdminProfessionalsPage() {
     setFormError(null);
     setAssignmentMode("ALL_SERVICES");
     setSelectedServiceIds([]);
+    setAssignmentCategoryId(0);
     form.reset(emptyValues);
     setIsFormOpen(false);
   }
@@ -322,15 +338,33 @@ export function AdminProfessionalsPage() {
                 </button>
               </div>
               {assignmentMode === "SELECTED_SERVICES" ? (
-                <Checklist
-                  emptyLabel="No hay servicios activos para asignar."
-                  items={activeServices.map((service) => ({
-                    id: service.id,
-                    label: service.name,
-                  }))}
-                  selectedIds={selectedServiceIds}
-                  onChange={setSelectedServiceIds}
-                />
+                <>
+                  <label className="assignment-filter">
+                    Categoria
+                    <select
+                      value={assignmentCategoryId}
+                      onChange={(event) =>
+                        setAssignmentCategoryId(Number(event.target.value))
+                      }
+                    >
+                      <option value={0}>Todas</option>
+                      {activeCategories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Checklist
+                    emptyLabel="No hay servicios activos para asignar en esta categoria."
+                    items={assignableServices.map((service) => ({
+                      id: service.id,
+                      label: `${service.name}${service.categoryName ? ` - ${service.categoryName}` : ""}`,
+                    }))}
+                    selectedIds={selectedServiceIds}
+                    onChange={setSelectedServiceIds}
+                  />
+                </>
               ) : (
                 <p className="assignment-hint">
                   El profesional queda habilitado para todos los servicios activos.

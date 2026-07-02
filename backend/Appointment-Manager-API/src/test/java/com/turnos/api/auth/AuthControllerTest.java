@@ -13,6 +13,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -125,5 +126,40 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("admin@turnos.local"))
                 .andExpect(jsonPath("$.role").value("ADMIN"))
                 .andExpect(jsonPath("$.active").value(true));
+    }
+
+    @Test
+    void clientCanUpdateOwnProfile() throws Exception {
+        String registerResponse = mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Editable Client",
+                                  "email": "editable.client@email.com",
+                                  "password": "password123",
+                                  "phone": "111"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = objectMapper.readTree(registerResponse).get("token").asText();
+
+        mockMvc.perform(put("/api/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Updated Client",
+                                  "phone": "222"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fullName").value("Updated Client"))
+                .andExpect(jsonPath("$.email").value("editable.client@email.com"))
+                .andExpect(jsonPath("$.phone").value("222"))
+                .andExpect(jsonPath("$.role").value("CLIENT"));
     }
 }

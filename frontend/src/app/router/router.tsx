@@ -13,6 +13,7 @@ import { AdminClientsPage } from "../../features/admin/pages/AdminClientsPage";
 import { AdminProfessionalsPage } from "../../features/admin/pages/AdminProfessionalsPage";
 import { AdminServicesPage } from "../../features/admin/pages/AdminServicesPage";
 import { ClientAppointmentsPage } from "../../features/client/pages/ClientAppointmentsPage";
+import { ClientBookingSuccessPage } from "../../features/client/pages/ClientBookingSuccessPage";
 import { ClientBookPage } from "../../features/client/pages/ClientBookPage";
 import { ClientProfilePage } from "../../features/client/pages/ClientProfilePage";
 import { LoginPage } from "../../features/auth/pages/LoginPage";
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/app/book" replace /> },
           { path: "book", element: <ClientBookPage /> },
+          { path: "book/success", element: <ClientBookingSuccessPage /> },
           { path: "appointments", element: <ClientAppointmentsPage /> },
           { path: "profile", element: <ClientProfilePage /> },
         ],

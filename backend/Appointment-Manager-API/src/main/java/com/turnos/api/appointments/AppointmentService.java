@@ -66,7 +66,7 @@ public class AppointmentService {
 
         validateClient(client);
         validateProfessional(professional);
-        validateService(service);
+        validateService(service, authenticatedUser);
         professionalServiceAssignmentService.ensureProfessionalProvidesService(professional.getId(), service.getId());
         validateAvailability(professional.getId(), request.startDateTime(), endDateTime);
 
@@ -184,9 +184,12 @@ public class AppointmentService {
         }
     }
 
-    private void validateService(com.turnos.api.services.Service service) {
+    private void validateService(com.turnos.api.services.Service service, AuthenticatedUser authenticatedUser) {
         if (!service.canBeBooked()) {
             throw new ConflictException("Service must be active and have valid duration");
+        }
+        if (authenticatedUser.getRole() == UserRole.CLIENT && !service.canBeBookedOnline()) {
+            throw new ConflictException("Service is not available for online booking");
         }
     }
 

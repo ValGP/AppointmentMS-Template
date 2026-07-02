@@ -13,6 +13,9 @@ public record ServiceRequest(
         @Size(max = 120)
         String name,
 
+        @NotNull
+        Long categoryId,
+
         @Size(max = 500)
         String description,
 
@@ -21,6 +24,17 @@ public record ServiceRequest(
 
         @NotNull
         @DecimalMin(value = "0.00")
-        BigDecimal price
+        BigDecimal price,
+
+        Boolean onlineBookable,
+
+        Boolean requiresEvaluation
 ) {
+    public boolean effectiveRequiresEvaluation() {
+        return Boolean.TRUE.equals(requiresEvaluation);
+    }
+
+    public boolean effectiveOnlineBookable() {
+        return !effectiveRequiresEvaluation() && !Boolean.FALSE.equals(onlineBookable);
+    }
 }

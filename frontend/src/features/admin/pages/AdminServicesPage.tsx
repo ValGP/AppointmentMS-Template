@@ -14,6 +14,14 @@ import { AdminToast } from "../components/AdminToast";
 import { useAdminToast } from "../hooks/useAdminToast";
 import { getProfessionals } from "../../professionals/api/professionalsApi";
 import {
+  createServiceCategory,
+  getServiceCategories,
+  setServiceCategoryActive,
+  updateServiceCategory,
+  type ServiceCategory,
+  type ServiceCategoryPayload,
+} from "../../services/api/serviceCategoriesApi";
+import {
   createService,
   getServiceProfessionalsAssignment,
   getServices,
@@ -27,16 +35,36 @@ import {
 
 type ServiceFormValues = {
   name: string;
+  categoryId: number;
   description: string;
   durationMinutes: number;
+  onlineBookable: boolean;
   price: number;
+  requiresEvaluation: boolean;
+};
+
+type CategoryFormValues = {
+  description: string;
+  displayOrder: number;
+  name: string;
+  slug: string;
 };
 
 const emptyValues: ServiceFormValues = {
   name: "",
+  categoryId: 0,
   description: "",
   durationMinutes: 30,
+  onlineBookable: true,
   price: 0,
+  requiresEvaluation: false,
+};
+
+const emptyCategoryValues: CategoryFormValues = {
+  description: "",
+  displayOrder: 0,
+  name: "",
+  slug: "",
 };
 
 export function AdminServicesPage() {
@@ -55,11 +83,24 @@ export function AdminServicesPage() {
   const [isInactiveOpen, setIsInactiveOpen] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const [serviceSort, setServiceSort] = useState("name-asc");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState(0);
+  const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
+  const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false);
+  const [categoryFormError, setCategoryFormError] = useState<string | null>(null);
+  const [categoryStatusTarget, setCategoryStatusTarget] =
+    useState<ServiceCategory | null>(null);
   const { showToast, toast } = useAdminToast();
 
+  const categoriesQuery = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: getServiceCategories,
+  });
   const servicesQuery = useQuery({
-    queryKey: ["services"],
-    queryFn: () => getServices(),
+    queryKey: ["services", selectedCategoryFilter],
+    queryFn: () =>
+      getServices({
+        categoryId: selectedCategoryFilter > 0 ? selectedCategoryFilter : undefined,
+      }),
   });
   const professionalsQuery = useQuery({
     queryKey: ["professionals"],
@@ -72,6 +113,9 @@ export function AdminServicesPage() {
   });
 
   const services = servicesQuery.data ?? [];
+  const categories = categoriesQuery.data ?? [];
+  const activeCategories = categories.filter((category) => category.active);
+  const inactiveCategories = categories.filter((category) => !category.active);
   const activeServices = services.filter((service) => service.active);
   const inactiveServices = services.filter((service) => !service.active);
   const visibleServices = useMemo(() => {
@@ -91,6 +135,12 @@ export function AdminServicesPage() {
       }
       if (serviceSort === "duration-desc") {
         return b.durationMinutes - a.durationMinutes;
+      }
+      if (serviceSort === "category-asc") {
+        return (
+          (a.categoryName ?? "").localeCompare(b.categoryName ?? "") ||
+          a.name.localeCompare(b.name)
+        );
       }
       if (serviceSort === "name-desc") {
         return b.name.localeCompare(a.name);
@@ -124,6 +174,10 @@ export function AdminServicesPage() {
 
   const form = useForm<ServiceFormValues>({
     defaultValues: emptyValues,
+  });
+  const requiresEvaluation = form.watch("requiresEvaluation");
+  const categoryForm = useForm<CategoryFormValues>({
+    defaultValues: emptyCategoryValues,
   });
 
   const saveMutation = useMutation({
@@ -177,12 +231,58 @@ export function AdminServicesPage() {
     },
   });
 
+  const saveCategoryMutation = useMutation({
+    mutationFn: (payload: ServiceCategoryPayload) =>
+      editingCategory
+        ? updateServiceCategory(editingCategory.id, payload)
+        : createServiceCategory(payload),
+    onSuccess: async () => {
+      const message = editingCategory
+        ? "Categoria actualizada."
+        : "Categoria creada.";
+      await queryClient.invalidateQueries({ queryKey: ["service-categories"] });
+      closeCategoryForm();
+      showToast(message);
+    },
+    onError: (error) =>
+      setCategoryFormError(
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : "No se pudo guardar la categoria.",
+      ),
+  });
+
+  const categoryStatusMutation = useMutation({
+    mutationFn: ({ active, id }: { active: boolean; id: number }) =>
+      setServiceCategoryActive(id, active),
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["service-categories"] }),
+        queryClient.invalidateQueries({ queryKey: ["services"] }),
+      ]);
+      setCategoryStatusTarget(null);
+      showToast(
+        variables.active ? "Categoria reactivada." : "Categoria desactivada.",
+      );
+    },
+    onError: (error) =>
+      showToast(
+        error instanceof ApiError
+          ? error.message
+          : "No se pudo actualizar la categoria.",
+        "danger",
+      ),
+  });
+
   function openCreateForm() {
     setEditingService(null);
     setFormError(null);
     setAssignmentMode("ALL_PROFESSIONALS");
     setSelectedProfessionalIds([]);
-    form.reset(emptyValues);
+    form.reset({
+      ...emptyValues,
+      categoryId: activeCategories[0]?.id ?? 0,
+    });
     setIsFormOpen(true);
   }
 
@@ -191,9 +291,12 @@ export function AdminServicesPage() {
     setFormError(null);
     form.reset({
       name: service.name,
+      categoryId: service.categoryId ?? 0,
       description: service.description ?? "",
       durationMinutes: service.durationMinutes,
+      onlineBookable: service.onlineBookable,
       price: service.price,
+      requiresEvaluation: service.requiresEvaluation,
     });
     setAssignmentMode("ALL_PROFESSIONALS");
     setSelectedProfessionalIds([]);
@@ -220,13 +323,61 @@ export function AdminServicesPage() {
     );
   }, [assignmentQuery.data]);
 
+  useEffect(() => {
+    if (requiresEvaluation) {
+      form.setValue("onlineBookable", false);
+    }
+  }, [form, requiresEvaluation]);
+
   function onSubmit(values: ServiceFormValues) {
     setFormError(null);
     saveMutation.mutate({
       name: values.name.trim(),
+      categoryId: Number(values.categoryId),
       description: values.description.trim() || undefined,
       durationMinutes: Number(values.durationMinutes),
+      onlineBookable: values.requiresEvaluation ? false : values.onlineBookable,
       price: Number(values.price),
+      requiresEvaluation: values.requiresEvaluation,
+    });
+  }
+
+  function openCreateCategoryForm() {
+    setEditingCategory(null);
+    setCategoryFormError(null);
+    categoryForm.reset({
+      ...emptyCategoryValues,
+      displayOrder: categories.length * 10 + 10,
+    });
+    setIsCategoryFormOpen(true);
+  }
+
+  function openEditCategoryForm(category: ServiceCategory) {
+    setEditingCategory(category);
+    setCategoryFormError(null);
+    categoryForm.reset({
+      description: category.description ?? "",
+      displayOrder: category.displayOrder,
+      name: category.name,
+      slug: category.slug,
+    });
+    setIsCategoryFormOpen(true);
+  }
+
+  function closeCategoryForm() {
+    setEditingCategory(null);
+    setCategoryFormError(null);
+    categoryForm.reset(emptyCategoryValues);
+    setIsCategoryFormOpen(false);
+  }
+
+  function onCategorySubmit(values: CategoryFormValues) {
+    setCategoryFormError(null);
+    saveCategoryMutation.mutate({
+      description: values.description.trim() || undefined,
+      displayOrder: Number(values.displayOrder),
+      name: values.name.trim(),
+      slug: values.slug.trim(),
     });
   }
 
@@ -258,6 +409,167 @@ export function AdminServicesPage() {
         />
       </div>
 
+      <article className="admin-card catalog-list-card">
+        <div className="card-heading">
+          <div>
+            <p className="admin-kicker">Categorias</p>
+            <h3>Categorias de servicios</h3>
+          </div>
+          <button
+            className="admin-primary-button"
+            type="button"
+            onClick={openCreateCategoryForm}
+          >
+            <Plus aria-hidden="true" size={16} />
+            Nueva categoria
+          </button>
+        </div>
+
+        {categoriesQuery.isLoading ? (
+          <CatalogState label="Cargando categorias..." />
+        ) : null}
+        {categoriesQuery.isError ? (
+          <CatalogState label="No se pudieron cargar las categorias." />
+        ) : null}
+        {!categoriesQuery.isLoading &&
+        !categoriesQuery.isError &&
+        categories.length === 0 ? (
+          <AdminEmptyState
+            label="No hay categorias cargadas."
+            supportingText="Crea categorias para ordenar los servicios en agenda y reserva online."
+            action={
+              <button className="admin-primary-button" type="button" onClick={openCreateCategoryForm}>
+                <Plus aria-hidden="true" size={16} />
+                Crear categoria
+              </button>
+            }
+          />
+        ) : null}
+
+        {categories.length > 0 ? (
+          <div className="category-chip-list">
+            {categories.map((category) => (
+              <div
+                className={`category-chip ${category.active ? "" : "is-muted"}`}
+                key={category.id}
+              >
+                <div>
+                  <strong>{category.name}</strong>
+                  <span>{category.slug}</span>
+                </div>
+                <AdminActionsMenu
+                  label={`Acciones de categoria ${category.name}`}
+                  items={[
+                    {
+                      icon: Edit3,
+                      label: "Editar categoria",
+                      onClick: () => openEditCategoryForm(category),
+                    },
+                    {
+                      disabled: categoryStatusMutation.isPending,
+                      icon: category.active ? PowerOff : Power,
+                      label: category.active
+                        ? "Desactivar categoria"
+                        : "Reactivar categoria",
+                      onClick: () => setCategoryStatusTarget(category),
+                      tone: category.active ? "danger" : "default",
+                    },
+                  ]}
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </article>
+
+      {isCategoryFormOpen ? (
+        <AdminModal
+          kicker={editingCategory ? "Editar" : "Crear"}
+          title={editingCategory ? editingCategory.name : "Nueva categoria"}
+          onClose={closeCategoryForm}
+        >
+          <form className="admin-form-grid" onSubmit={categoryForm.handleSubmit(onCategorySubmit)}>
+            <label>
+              Nombre
+              <input
+                {...categoryForm.register("name", {
+                  required: "Ingresa el nombre.",
+                  maxLength: {
+                    value: 120,
+                    message: "Maximo 120 caracteres.",
+                  },
+                })}
+              />
+              <FieldError message={categoryForm.formState.errors.name?.message} />
+            </label>
+
+            <label>
+              Slug
+              <input
+                {...categoryForm.register("slug", {
+                  required: "Ingresa el slug.",
+                  maxLength: {
+                    value: 140,
+                    message: "Maximo 140 caracteres.",
+                  },
+                })}
+              />
+              <FieldError message={categoryForm.formState.errors.slug?.message} />
+            </label>
+
+            <label>
+              Orden
+              <input
+                type="number"
+                min={0}
+                {...categoryForm.register("displayOrder", {
+                  min: { value: 0, message: "No puede ser negativo." },
+                  valueAsNumber: true,
+                })}
+              />
+              <FieldError
+                message={categoryForm.formState.errors.displayOrder?.message}
+              />
+            </label>
+
+            <label className="form-span-2">
+              Descripcion
+              <textarea
+                rows={3}
+                {...categoryForm.register("description", {
+                  maxLength: {
+                    value: 500,
+                    message: "Maximo 500 caracteres.",
+                  },
+                })}
+              />
+              <FieldError
+                message={categoryForm.formState.errors.description?.message}
+              />
+            </label>
+
+            {categoryFormError ? (
+              <div className="admin-form-error">{categoryFormError}</div>
+            ) : null}
+
+            <div className="form-actions">
+              <button className="admin-soft-button" type="button" onClick={closeCategoryForm}>
+                Cancelar
+              </button>
+              <button
+                className="admin-primary-button"
+                type="submit"
+                disabled={saveCategoryMutation.isPending}
+              >
+                {saveCategoryMutation.isPending
+                  ? "Guardando..."
+                  : "Guardar categoria"}
+              </button>
+            </div>
+          </form>
+        </AdminModal>
+      ) : null}
+
       {isFormOpen ? (
         <AdminModal
           kicker={editingService ? "Editar" : "Crear"}
@@ -277,6 +589,25 @@ export function AdminServicesPage() {
                 })}
               />
               <FieldError message={form.formState.errors.name?.message} />
+            </label>
+
+            <label>
+              Categoria
+              <select
+                {...form.register("categoryId", {
+                  required: "Selecciona una categoria.",
+                  valueAsNumber: true,
+                  min: { value: 1, message: "Selecciona una categoria." },
+                })}
+              >
+                <option value={0}>Seleccionar</option>
+                {activeCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <FieldError message={form.formState.errors.categoryId?.message} />
             </label>
 
             <label>
@@ -325,6 +656,35 @@ export function AdminServicesPage() {
                 message={form.formState.errors.description?.message}
               />
             </label>
+
+            <div className="assignment-panel form-span-2">
+              <div>
+                <p className="admin-kicker">Reserva online</p>
+                <strong>Uso en el flujo de turnos del cliente</strong>
+              </div>
+              <div className="booking-options">
+                <label>
+                  <input
+                    type="checkbox"
+                    disabled={requiresEvaluation}
+                    {...form.register("onlineBookable")}
+                  />
+                  <span>
+                    <strong>Permitir reserva online</strong>
+                    <small>Los clientes pueden elegir este servicio al sacar turno.</small>
+                  </span>
+                </label>
+                <label>
+                  <input type="checkbox" {...form.register("requiresEvaluation")} />
+                  <span>
+                    <strong>Requiere evaluacion previa</strong>
+                    <small>
+                      Se coordina por administracion y no aparece en reserva online.
+                    </small>
+                  </span>
+                </label>
+              </div>
+            </div>
 
             <div className="assignment-panel form-span-2">
               <div>
@@ -393,6 +753,22 @@ export function AdminServicesPage() {
         </div>
 
         <div className="catalog-list-controls">
+          <label>
+            Categoria
+            <select
+              value={selectedCategoryFilter}
+              onChange={(event) =>
+                setSelectedCategoryFilter(Number(event.target.value))
+              }
+            >
+              <option value={0}>Todas</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="catalog-search-field">
             <Search aria-hidden="true" size={16} />
             <input
@@ -410,6 +786,7 @@ export function AdminServicesPage() {
             >
               <option value="name-asc">Nombre A-Z</option>
               <option value="name-desc">Nombre Z-A</option>
+              <option value="category-asc">Categoria A-Z</option>
               <option value="duration-asc">Duracion menor</option>
               <option value="duration-desc">Duracion mayor</option>
             </select>
@@ -459,6 +836,7 @@ export function AdminServicesPage() {
           <div className="catalog-table" role="table" aria-label="Servicios">
             <div className="catalog-table-head" role="row">
               <span>Servicio</span>
+              <span>Categoria</span>
               <span>Duracion</span>
               <span>Precio</span>
               <span>Estado</span>
@@ -469,10 +847,24 @@ export function AdminServicesPage() {
                 <div className="catalog-main-cell">
                   <strong>{service.name}</strong>
                   <span>{service.description || "Sin descripcion"}</span>
+                  <div className="service-booking-badges">
+                    {service.requiresEvaluation ? (
+                      <span className="status-badge tone-warning">
+                        Evaluacion previa
+                      </span>
+                    ) : service.onlineBookable ? (
+                      <span className="status-badge tone-success">
+                        Reserva online
+                      </span>
+                    ) : (
+                      <span className="status-badge tone-muted">Solo admin</span>
+                    )}
+                  </div>
                   {servicesWithoutProfessionals.has(service.id) ? (
                     <AdminConflictBadge label="Sin profesionales" tone="danger" />
                   ) : null}
                 </div>
+                <span>{service.categoryName ?? "Sin categoria"}</span>
                 <span>{service.durationMinutes} min</span>
                 <span>{formatCurrency(service.price)}</span>
                 <span
@@ -542,6 +934,30 @@ export function AdminServicesPage() {
               setStatusTarget(service);
             }
           }}
+        />
+      ) : null}
+      {categoryStatusTarget ? (
+        <AdminConfirmDialog
+          title={
+            categoryStatusTarget.active
+              ? "Desactivar categoria"
+              : "Reactivar categoria"
+          }
+          message={
+            categoryStatusTarget.active
+              ? `${categoryStatusTarget.name} dejara de estar disponible para nuevos servicios. Si tiene servicios activos, el backend rechazara la accion.`
+              : `${categoryStatusTarget.name} volvera a poder usarse en servicios.`
+          }
+          confirmLabel={categoryStatusTarget.active ? "Desactivar" : "Reactivar"}
+          tone={categoryStatusTarget.active ? "danger" : "primary"}
+          isPending={categoryStatusMutation.isPending}
+          onCancel={() => setCategoryStatusTarget(null)}
+          onConfirm={() =>
+            categoryStatusMutation.mutate({
+              id: categoryStatusTarget.id,
+              active: !categoryStatusTarget.active,
+            })
+          }
         />
       ) : null}
     </section>

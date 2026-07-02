@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,6 +65,7 @@ class AdminCatalogControllerTest {
                         .content("""
                                 {
                                   "name": "Consultation",
+                                  "categoryId": 3,
                                   "description": "Initial consultation",
                                   "durationMinutes": 45,
                                   "price": 1500.00
@@ -72,6 +74,8 @@ class AdminCatalogControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Consultation"))
                 .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.onlineBookable").value(true))
+                .andExpect(jsonPath("$.requiresEvaluation").value(false))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -94,12 +98,219 @@ class AdminCatalogControllerTest {
                         .content("""
                                 {
                                   "name": "Blocked",
+                                  "categoryId": 3,
                                   "description": "Should not be created",
                                   "durationMinutes": 30,
                                   "price": 1000.00
                                 }
                                 """))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCanCreateAndDeactivateServiceCategory() throws Exception {
+        String token = login("admin@turnos.local", "admin1234");
+
+        String response = mockMvc.perform(post("/api/service-categories")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Test Category",
+                                  "slug": "test-category",
+                                  "description": "Category for controller test",
+                                  "displayOrder": 90
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Test Category"))
+                .andExpect(jsonPath("$.slug").value("test-category"))
+                .andExpect(jsonPath("$.active").value(true))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long id = objectMapper.readTree(response).get("id").asLong();
+
+        mockMvc.perform(patch("/api/service-categories/{id}/deactivate", id)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
+    void requiresEvaluationServiceIsNotOnlineBookable() throws Exception {
+        String token = login("admin@turnos.local", "admin1234");
+
+        String response = mockMvc.perform(post("/api/services")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "PRP Evaluation",
+                                  "categoryId": 3,
+                                  "description": "Needs previous evaluation",
+                                  "durationMinutes": 45,
+                                  "price": 2500.00,
+                                  "onlineBookable": true,
+                                  "requiresEvaluation": true
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.onlineBookable").value(false))
+                .andExpect(jsonPath("$.requiresEvaluation").value(true))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long id = objectMapper.readTree(response).get("id").asLong();
+
+        mockMvc.perform(put("/api/services/{id}", id)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "PRP Evaluation Updated",
+                                  "categoryId": 3,
+                                  "description": "Still needs evaluation",
+                                  "durationMinutes": 45,
+                                  "price": 2600.00,
+                                  "onlineBookable": true,
+                                  "requiresEvaluation": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.onlineBookable").value(false))
+                .andExpect(jsonPath("$.requiresEvaluation").value(true));
+    }
+
+    @Test
+    void clientCannotCreateServiceCategory() throws Exception {
+        String token = registerClient("client.category@email.com");
+
+        mockMvc.perform(post("/api/service-categories")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Blocked Category",
+                                  "slug": "blocked-category",
+                                  "description": "Should not be created",
+                                  "displayOrder": 99
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void categoryWithActiveServicesCannotBeDeactivated() throws Exception {
+        String token = login("admin@turnos.local", "admin1234");
+
+        mockMvc.perform(post("/api/services")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Facial Category Guard",
+                                  "categoryId": 3,
+                                  "description": "Uses facial category",
+                                  "durationMinutes": 30,
+                                  "price": 1200.00
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(patch("/api/service-categories/{id}/deactivate", 3)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void servicesCanBeFilteredByCategory() throws Exception {
+        String token = login("admin@turnos.local", "admin1234");
+
+        String categoryResponse = mockMvc.perform(post("/api/service-categories")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Filter Category",
+                                  "slug": "filter-category",
+                                  "description": "Category for filter test",
+                                  "displayOrder": 91
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long categoryId = objectMapper.readTree(categoryResponse).get("id").asLong();
+
+        mockMvc.perform(post("/api/services")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Filtered Service",
+                                  "categoryId": %d,
+                                  "description": "Visible by category",
+                                  "durationMinutes": 30,
+                                  "price": 1200.00
+                                }
+                                """.formatted(categoryId)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/services")
+                        .param("categoryId", categoryId.toString())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Filtered Service"))
+                .andExpect(jsonPath("$[0].categoryId").value(categoryId));
+    }
+
+    @Test
+    void servicesCanBeFilteredByOnlineBooking() throws Exception {
+        String token = login("admin@turnos.local", "admin1234");
+
+        mockMvc.perform(post("/api/services")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Online Filter Service",
+                                  "categoryId": 3,
+                                  "description": "Bookable",
+                                  "durationMinutes": 30,
+                                  "price": 1200.00,
+                                  "onlineBookable": true,
+                                  "requiresEvaluation": false
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/services")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Evaluation Filter Service",
+                                  "categoryId": 3,
+                                  "description": "Not bookable online",
+                                  "durationMinutes": 30,
+                                  "price": 1200.00,
+                                  "onlineBookable": false,
+                                  "requiresEvaluation": true
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/services")
+                        .param("onlineBookableOnly", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name == 'Online Filter Service')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'Evaluation Filter Service')]").doesNotExist());
     }
 
     @Test

@@ -5063,3 +5063,116 @@ p {
   }
 }
 
+/* ==========================================================================
+   Boton flotante de WhatsApp (Sitio Publico)
+   ========================================================================== */
+.whatsapp-float-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  background-color: transparent;
+  border-radius: 50%;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.whatsapp-float-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.whatsapp-float-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+  filter: brightness(0.95);
+}
+
+.whatsapp-float-btn:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* Adaptación responsive para mobile */
+@media (max-width: 768px) {
+  .whatsapp-float-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* ==========================================================================
+   Acciones Administrativas (Tema y Logout en Menu Hamburguesa)
+   ========================================================================== */
+.admin-nav-actions {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .admin-header-actions {
+    display: none !important;
+  }
+
+  .admin-nav-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    gap: 10px;
+    border-top: 1px dashed var(--admin-border);
+    margin-top: 12px;
+    padding-top: 14px;
+    width: 100%;
+  }
+
+  .admin-nav-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    border: 1px solid var(--admin-border);
+    border-radius: 6px;
+    background: var(--admin-bg);
+    color: var(--admin-text-soft);
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 0 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .admin-nav-action-btn:hover {
+    background: var(--admin-border);
+    color: var(--admin-text-main);
+  }
+
+  .admin-nav-action-btn svg {
+    color: var(--admin-brand);
+  }
+
+  .admin-nav-action-btn.logout-btn {
+    color: var(--admin-danger);
+    border-color: color-mix(in srgb, var(--admin-danger) 28%, var(--admin-border));
+  }
+
+  .admin-nav-action-btn.logout-btn svg {
+    color: var(--admin-danger);
+  }
+
+  .admin-nav-action-btn.logout-btn:hover {
+    background: color-mix(in srgb, var(--admin-danger) 10%, transparent);
+  }
+}
+
+

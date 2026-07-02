@@ -1,0 +1,2184 @@
+[
+  {
+    "id": "TC001",
+    "title": "Book an online appointment end to end",
+    "description": "A logged-in client can select a category, service, professional, available slot, add notes, and submit a booking successfully.",
+    "category": "Client appointment booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/book"
+      },
+      {
+        "type": "action",
+        "description": "Select a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Select an online-bookable service"
+      },
+      {
+        "type": "action",
+        "description": "Select a compatible professional"
+      },
+      {
+        "type": "action",
+        "description": "Switch to a week with available time slots"
+      },
+      {
+        "type": "action",
+        "description": "Choose an available time slot"
+      },
+      {
+        "type": "action",
+        "description": "Add optional notes"
+      },
+      {
+        "type": "action",
+        "description": "Submit the appointment request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking success page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment request success state is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Block double booking of an already selected slot",
+    "description": "A client cannot book a time slot that is no longer available after it has been selected or reserved in the flow.",
+    "category": "Client appointment booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/book"
+      },
+      {
+        "type": "action",
+        "description": "Select a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Select an online-bookable service"
+      },
+      {
+        "type": "action",
+        "description": "Select a compatible professional"
+      },
+      {
+        "type": "action",
+        "description": "Switch to a week with available time slots"
+      },
+      {
+        "type": "action",
+        "description": "Choose an available time slot"
+      },
+      {
+        "type": "action",
+        "description": "Try to select the same time slot again"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the slot is no longer available for booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a booking confirmation is not shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Log in as an admin and reach the admin area",
+    "description": "An admin can submit valid credentials and be taken into the admin experience after login.",
+    "category": "Authentication and role-based access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin area is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify admin dashboard navigation is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Prevent booking a taken slot",
+    "description": "A client cannot book a time slot that is no longer available after it has already been selected in the current booking flow.",
+    "category": "Client appointment booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the appointment booking section"
+      },
+      {
+        "type": "action",
+        "description": "Choose a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Choose an online-bookable service"
+      },
+      {
+        "type": "action",
+        "description": "Choose an available professional"
+      },
+      {
+        "type": "action",
+        "description": "Choose an available future time slot"
+      },
+      {
+        "type": "action",
+        "description": "Fill in appointment notes with valid details"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking request"
+      },
+      {
+        "type": "action",
+        "description": "Start a new booking for the same service and professional"
+      },
+      {
+        "type": "action",
+        "description": "Open the previously used time slot picker"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the previously selected slot is no longer available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Log in as a client and reach the client area",
+    "description": "A client can submit valid credentials and be taken into the client experience after login.",
+    "category": "Authentication and role-based access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client area is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify client booking or appointment navigation is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Register a new client account",
+    "description": "A new client can complete registration and be taken into the client booking flow.",
+    "category": "Authentication and role-based access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the name field with a unique client name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with a unique client email"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with a valid password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone field with a phone number"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client booking flow is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the account creation success state is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Protect client routes from unauthenticated access",
+    "description": "A visitor who is not logged in cannot access the client booking area and is routed to authentication instead.",
+    "category": "Authentication and role-based access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /app/book"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify client-only content is not visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Filter appointments and confirm a pending appointment",
+    "description": "This verifies that an admin can locate appointments through filters and change a pending appointment to confirmed from its detail view.",
+    "category": "Admin appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Filter appointments by status"
+      },
+      {
+        "type": "action",
+        "description": "Open a pending appointment detail"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment status changes to confirmed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Protect admin routes from client access",
+    "description": "An authenticated client cannot open the admin dashboard and is kept out of admin-only content.",
+    "category": "Authentication and role-based access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify admin-only content is not visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is restricted to the client area"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Protect the client catalog from unauthenticated access",
+    "description": "A visitor who is not signed in is routed to login before reaching the client catalog.",
+    "category": "Admin clients",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin/clients"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Change an appointment status from the admin list",
+    "description": "An admin can open an appointment and move it from pending to confirmed or rejected, or from confirmed to completed or no-show.",
+    "category": "Admin appointment status management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Open an appointment in the list"
+      },
+      {
+        "type": "action",
+        "description": "Change the appointment status to a valid next state"
+      },
+      {
+        "type": "action",
+        "description": "Save the status change"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated appointment status is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment remains accessible in the admin list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Create a confirmed appointment for an existing client from the calendar",
+    "description": "This verifies that an admin can book a valid open slot for an existing client and see the new appointment created as confirmed.",
+    "category": "Admin calendar and appointment creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/calendar"
+      },
+      {
+        "type": "action",
+        "description": "Select a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Select a service"
+      },
+      {
+        "type": "action",
+        "description": "Select a compatible professional"
+      },
+      {
+        "type": "action",
+        "description": "Choose an available slot"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing client"
+      },
+      {
+        "type": "action",
+        "description": "Add optional notes"
+      },
+      {
+        "type": "action",
+        "description": "Create the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is created as confirmed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Create a confirmed appointment and a new client together from the calendar",
+    "description": "This verifies that an admin can create a new client during booking and immediately place that client into a confirmed appointment.",
+    "category": "Admin calendar and appointment creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/calendar"
+      },
+      {
+        "type": "action",
+        "description": "Select a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Select a service"
+      },
+      {
+        "type": "action",
+        "description": "Select a compatible professional"
+      },
+      {
+        "type": "action",
+        "description": "Choose an available slot"
+      },
+      {
+        "type": "action",
+        "description": "Create a new client and appointment together"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the new client details"
+      },
+      {
+        "type": "action",
+        "description": "Save the workflow"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new client and the confirmed appointment are created"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Cancel an appointment with a reason from the admin detail view",
+    "description": "This verifies that an admin can cancel an active appointment with a reason and see the updated canceled state.",
+    "category": "Admin appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Open a pending or confirmed appointment detail"
+      },
+      {
+        "type": "action",
+        "description": "Cancel the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Provide a cancellation reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment status changes to canceled"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Client cancels an appointment successfully",
+    "description": "A logged-in client can cancel an eligible appointment with a reason and see it move into canceled history.",
+    "category": "Client appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Open an eligible appointment for cancellation"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the cancellation reason field with a change of plans"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the cancellation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment appears in the canceled history"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Cancel a client appointment with a reason",
+    "description": "A client can cancel a pending or confirmed appointment by providing a reason and see it move to canceled history.",
+    "category": "Client appointments list/filter/cancel with reason",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the appointments section"
+      },
+      {
+        "type": "action",
+        "description": "Select a pending or confirmed appointment"
+      },
+      {
+        "type": "action",
+        "description": "Cancel the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a cancellation reason with valid details"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the cancellation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment appears in canceled history"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Reject a pending appointment with a reason",
+    "description": "This verifies that an admin can reject a pending appointment and provide a reason that is reflected in the updated status.",
+    "category": "Admin appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Filter appointments by status"
+      },
+      {
+        "type": "action",
+        "description": "Open a pending appointment detail"
+      },
+      {
+        "type": "action",
+        "description": "Reject the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Provide a rejection reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment status changes to rejected"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "View appointments by status and cancel with a reason",
+    "description": "A client can filter appointments by status, cancel a pending or confirmed appointment with a reason, and see it move to canceled history.",
+    "category": "Client appointment list/filter/cancel with reason",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Select the pending or confirmed appointments view"
+      },
+      {
+        "type": "action",
+        "description": "Open an appointment for cancellation"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a cancellation reason"
+      },
+      {
+        "type": "action",
+        "description": "Submit the cancellation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment appears in canceled history"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is no longer shown in the active status view"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Create an appointment from the admin calendar",
+    "description": "An admin can use the weekly calendar to create a confirmed appointment for an existing or new client.",
+    "category": "Admin calendar availability and appointment creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the calendar section"
+      },
+      {
+        "type": "action",
+        "description": "Select an available time slot"
+      },
+      {
+        "type": "action",
+        "description": "Create a confirmed appointment for an existing or new client"
+      },
+      {
+        "type": "action",
+        "description": "Save the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new confirmed appointment appears on the calendar"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Create a bookable service with professional assignments",
+    "description": "An admin can create a new online-bookable service, assign professionals, and see it added as active and bookable.",
+    "category": "Admin services and categories",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the services and categories section"
+      },
+      {
+        "type": "action",
+        "description": "Create a new service with category, duration, price, and description"
+      },
+      {
+        "type": "action",
+        "description": "Keep online booking enabled"
+      },
+      {
+        "type": "action",
+        "description": "Assign compatible professionals"
+      },
+      {
+        "type": "action",
+        "description": "Save the service"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the service appears in the list as active and bookable"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Review dashboard metrics and open appointment management",
+    "description": "An admin can view dashboard metrics and navigate into appointment management from the dashboard.",
+    "category": "Admin dashboard metrics and quick actions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open the appointments management view from the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard metrics are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appointment management is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Client reviews appointments by status filter",
+    "description": "A logged-in client can open the appointments page and switch between status filters to see the matching appointment groups.",
+    "category": "Client appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Select the all appointments filter"
+      },
+      {
+        "type": "action",
+        "description": "Select the pending appointments filter"
+      },
+      {
+        "type": "action",
+        "description": "Select the confirmed appointments filter"
+      },
+      {
+        "type": "action",
+        "description": "Select the appointment history filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the matching appointment sections are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Review admin dashboard metrics and open appointments",
+    "description": "An admin can view dashboard metrics and drill into the appointments area from the dashboard.",
+    "category": "Admin dashboard metrics and quick actions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard section"
+      },
+      {
+        "type": "action",
+        "description": "Review the dashboard metrics"
+      },
+      {
+        "type": "action",
+        "description": "Click the appointments quick action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointments management view is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "Review weekly availability and filter by category service and professional",
+    "description": "This verifies that an admin can narrow the calendar to a specific service setup and move between weeks while seeing availability and occupied slots update accordingly.",
+    "category": "Admin calendar and appointment creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/calendar"
+      },
+      {
+        "type": "action",
+        "description": "Select a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Select a service"
+      },
+      {
+        "type": "action",
+        "description": "Select a compatible professional"
+      },
+      {
+        "type": "action",
+        "description": "Switch to a different week"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the calendar displays availability and occupied slots for the selected setup"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC025",
+    "title": "Create a client account from the catalog",
+    "description": "An admin can add a new client with required details and see the client appear in the client catalog.",
+    "category": "Admin clients",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the client catalog"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new client"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the name field with a new client name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with a new client email"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone field with a new client phone number"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with a valid password"
+      },
+      {
+        "type": "action",
+        "description": "Save the new client"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new client appears in the catalog"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC026",
+    "title": "Admin reviews dashboard metrics and refreshes data",
+    "description": "An admin can open the dashboard, review operational metrics and upcoming appointments, and refresh the view to keep it current.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Refresh the dashboard data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify operational metrics are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upcoming appointments are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC027",
+    "title": "Edit client profile details",
+    "description": "A client can update profile information and see the saved changes reflected in the profile page.",
+    "category": "Client profile edit",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/profile"
+      },
+      {
+        "type": "action",
+        "description": "Update the profile name to a new valid name"
+      },
+      {
+        "type": "action",
+        "description": "Update any other editable profile detail"
+      },
+      {
+        "type": "action",
+        "description": "Submit the profile form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated profile information is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the profile save confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC028",
+    "title": "Client sees cancellation reason required",
+    "description": "A logged-in client cannot cancel an eligible appointment until a cancellation reason is provided.",
+    "category": "Client appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Open an eligible appointment for cancellation"
+      },
+      {
+        "type": "action",
+        "description": "Submit the cancellation without entering a reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a cancellation reason validation error is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC029",
+    "title": "Mark a confirmed appointment as completed or no-show",
+    "description": "This verifies that an admin can close out a confirmed appointment using a valid final status from the detail view.",
+    "category": "Admin appointments management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/appointments"
+      },
+      {
+        "type": "action",
+        "description": "Open a confirmed appointment detail"
+      },
+      {
+        "type": "action",
+        "description": "Mark the appointment as completed or no-show"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment status updates to the selected final state"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC030",
+    "title": "Admin opens filtered appointments from a metric card",
+    "description": "An admin can drill from the dashboard into the appointments area with the corresponding filter already applied.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open a metric card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointments list is displayed with a matching filter applied"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC031",
+    "title": "View client appointments by status",
+    "description": "A client can open the appointments page and review bookings grouped or filtered by status.",
+    "category": "Client appointments list/filter/cancel with reason",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the appointments section"
+      },
+      {
+        "type": "action",
+        "description": "Filter appointments by status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appointments matching the selected status are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC032",
+    "title": "Client updates profile details",
+    "description": "A logged-in client can edit their name and phone number and see the saved profile information reflected on the page.",
+    "category": "Client profile management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the client password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/profile"
+      },
+      {
+        "type": "action",
+        "description": "Enter edit mode for the profile"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the full name field with Test Client Updated"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the phone number field with a valid phone number"
+      },
+      {
+        "type": "action",
+        "description": "Save the profile changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated profile details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC033",
+    "title": "Edit a client profile and keep the changes",
+    "description": "An admin can update a client's name or phone details and see the edited profile reflected in the catalog or detail view.",
+    "category": "Admin clients",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the client catalog"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing client record"
+      },
+      {
+        "type": "action",
+        "description": "Start editing the client record"
+      },
+      {
+        "type": "action",
+        "description": "Update the name or phone field with a new value"
+      },
+      {
+        "type": "action",
+        "description": "Save the client changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated client profile is shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC034",
+    "title": "Manage clients and view history",
+    "description": "An admin can open the client catalog, inspect a client record, and view that client's appointment history.",
+    "category": "Admin clients catalog and history",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/clients"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record"
+      },
+      {
+        "type": "action",
+        "description": "Open the client's history view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify client details are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client's appointment history is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC035",
+    "title": "Configure a service and assign it to a professional",
+    "description": "An admin can manage services, mark them as online-bookable, and assign them to a compatible professional.",
+    "category": "Admin services/categories and professional assignments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/services"
+      },
+      {
+        "type": "action",
+        "description": "Create or open a service within a category"
+      },
+      {
+        "type": "action",
+        "description": "Enable online booking for the service"
+      },
+      {
+        "type": "action",
+        "description": "Assign the service to a professional"
+      },
+      {
+        "type": "action",
+        "description": "Save the service configuration"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the service appears as available for online booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the professional assignment is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "Admin follows quick actions from the dashboard",
+    "description": "An admin can use dashboard quick actions to open key operational areas such as calendar, clients, or configuration pages.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open a quick action from the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the target management area is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "Disable online booking when evaluation is required",
+    "description": "An admin can edit a service to require evaluation and see online booking disabled for that service.",
+    "category": "Admin services and categories",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the services and categories section"
+      },
+      {
+        "type": "action",
+        "description": "Edit an existing service"
+      },
+      {
+        "type": "action",
+        "description": "Enable evaluation required for the service"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify online booking is disabled for that service"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "Search or sort clients and review appointment history",
+    "description": "An admin can find a client through search or sorting and open the client's history to review appointment records.",
+    "category": "Admin clients",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the client catalog"
+      },
+      {
+        "type": "action",
+        "description": "Use search or sorting to find a client"
+      },
+      {
+        "type": "action",
+        "description": "Open the client's history"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appointment history records are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Create and update an availability block",
+    "description": "This verifies that an admin can create an availability block, edit it, and see the updated block details saved in the list.",
+    "category": "Admin availability blocks",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/availability-blocks"
+      },
+      {
+        "type": "action",
+        "description": "Create a new availability block with a type, start, end, and reason"
+      },
+      {
+        "type": "action",
+        "description": "Edit the newly created block"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated block appears in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Create a weekly business hour entry",
+    "description": "An admin can choose a professional, add a weekly working hour range, and see it added to the schedule.",
+    "category": "Admin business hours",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the business hours section"
+      },
+      {
+        "type": "action",
+        "description": "Select a professional"
+      },
+      {
+        "type": "action",
+        "description": "Create a business hour entry with a day and time range"
+      },
+      {
+        "type": "action",
+        "description": "Save the working hour"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the working hour appears in the schedule"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC041",
+    "title": "Admin opens configuration area from an alert",
+    "description": "An admin can use a dashboard configuration alert to navigate directly to the related management screen.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the admin password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open a configuration alert link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the related management area is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC042",
+    "title": "Create a professional",
+    "description": "An admin can add a new professional and see the professional appear in the catalog.",
+    "category": "Admin professionals",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the professionals section"
+      },
+      {
+        "type": "action",
+        "description": "Create a new professional with contact details"
+      },
+      {
+        "type": "action",
+        "description": "Save the professional"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new professional appears in the catalog"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC043",
+    "title": "Set business hours and create an availability block",
+    "description": "An admin can configure business hours, add an availability block, and see the blocked period reflected in scheduling views.",
+    "category": "Admin business hours setup/editing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/business-hours"
+      },
+      {
+        "type": "action",
+        "description": "Update business hours for a professional"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/availability-blocks"
+      },
+      {
+        "type": "action",
+        "description": "Create a new availability block"
+      },
+      {
+        "type": "action",
+        "description": "Save the block"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated business hours are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the availability block is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC044",
+    "title": "Update a professional's service assignments",
+    "description": "An admin can edit a professional and save updated service assignments.",
+    "category": "Admin professionals",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the professionals section"
+      },
+      {
+        "type": "action",
+        "description": "Edit a professional"
+      },
+      {
+        "type": "action",
+        "description": "Assign selected services or all services"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the professional-service assignments are updated"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC045",
+    "title": "Browse public home page and treatment categories",
+    "description": "A public visitor can view the home page, browse treatment categories, and open a category page to learn about available treatments.",
+    "category": "Public site and treatment browsing",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to browse a treatment category"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a treatment category page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify public treatment information is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC046",
+    "title": "Create a service category",
+    "description": "An admin can add a new service category and see it appear in the categories list.",
+    "category": "Admin services and categories",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the services and categories section"
+      },
+      {
+        "type": "action",
+        "description": "Create a new service category with required details"
+      },
+      {
+        "type": "action",
+        "description": "Save the category"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new category appears in the categories list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC047",
+    "title": "Deactivate a client and restore access later",
+    "description": "An admin can deactivate a client and then reactivate the same client so the client returns to active use.",
+    "category": "Admin clients",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the client catalog"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing client record"
+      },
+      {
+        "type": "action",
+        "description": "Deactivate the client"
+      },
+      {
+        "type": "action",
+        "description": "Reactivate the same client"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client is shown as active again"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC048",
+    "title": "Reset calendar filters to return to the default availability view",
+    "description": "This verifies that an admin can clear calendar filters and return to the default weekly availability view.",
+    "category": "Admin calendar and appointment creation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an admin user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin/calendar"
+      },
+      {
+        "type": "action",
+        "description": "Select a treatment category"
+      },
+      {
+        "type": "action",
+        "description": "Select a service"
+      },
+      {
+        "type": "action",
+        "description": "Select a compatible professional"
+      },
+      {
+        "type": "action",
+        "description": "Reset the filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the calendar returns to the default availability view"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC049",
+    "title": "Edit and restore a business hour",
+    "description": "An admin can edit a business hour, deactivate it, and reactivate it so the schedule remains available again.",
+    "category": "Admin business hours",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the business hours section"
+      },
+      {
+        "type": "action",
+        "description": "Edit an existing business hour time range"
+      },
+      {
+        "type": "action",
+        "description": "Deactivate the business hour"
+      },
+      {
+        "type": "action",
+        "description": "Reactivate the same business hour"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated schedule is available again"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC050",
+    "title": "Search and filter the service list",
+    "description": "An admin can search, filter, or sort services and see the list update accordingly.",
+    "category": "Admin services and categories",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the services and categories section"
+      },
+      {
+        "type": "action",
+        "description": "Search, filter, or sort the service list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the service list updates to match the selected search or filter"
+      }
+    ],
+    "priority": "Medium"
+  }
+]

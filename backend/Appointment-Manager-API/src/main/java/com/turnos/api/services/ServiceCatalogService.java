@@ -9,26 +9,37 @@ import java.util.List;
 public class ServiceCatalogService {
 
     private final ServiceRepository serviceRepository;
+    private final ServiceCategoryService categoryService;
 
-    public ServiceCatalogService(ServiceRepository serviceRepository) {
+    public ServiceCatalogService(ServiceRepository serviceRepository, ServiceCategoryService categoryService) {
         this.serviceRepository = serviceRepository;
+        this.categoryService = categoryService;
     }
 
     @Transactional
     public ServiceResponse create(ServiceRequest request) {
+        ServiceCategory category = categoryService.getActiveCategory(request.categoryId());
         Service service = new Service(
                 request.name(),
                 request.description(),
                 request.durationMinutes(),
-                request.price()
+                request.price(),
+                category,
+                request.effectiveOnlineBookable(),
+                request.effectiveRequiresEvaluation()
         );
 
         return ServiceResponse.from(serviceRepository.save(service));
     }
 
     @Transactional(readOnly = true)
-    public List<ServiceResponse> findAll() {
-        return serviceRepository.findAll().stream()
+    public List<ServiceResponse> findAll(Long categoryId, boolean onlineBookableOnly) {
+        List<Service> services = categoryId == null
+                ? serviceRepository.findAll()
+                : serviceRepository.findByCategory_Id(categoryId);
+
+        return services.stream()
+                .filter(service -> !onlineBookableOnly || service.canBeBookedOnline())
                 .map(ServiceResponse::from)
                 .toList();
     }
@@ -41,11 +52,15 @@ public class ServiceCatalogService {
     @Transactional
     public ServiceResponse update(Long id, ServiceRequest request) {
         Service service = getService(id);
+        ServiceCategory category = categoryService.getActiveCategory(request.categoryId());
         service.updateDetails(
                 request.name(),
                 request.description(),
                 request.durationMinutes(),
-                request.price()
+                request.price(),
+                category,
+                request.effectiveOnlineBookable(),
+                request.effectiveRequiresEvaluation()
         );
         return ServiceResponse.from(service);
     }

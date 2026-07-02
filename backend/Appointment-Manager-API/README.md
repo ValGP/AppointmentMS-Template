@@ -146,9 +146,27 @@ Content-Type: application/json
 ```json
 {
   "name": "General Consultation",
+  "categoryId": 3,
   "description": "Initial appointment",
   "durationMinutes": 30,
   "price": 15000.00
+}
+```
+
+Create a service category:
+
+```http
+POST /api/service-categories
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Estetica facial",
+  "slug": "estetica-facial",
+  "description": "Procedimientos para el cuidado facial.",
+  "displayOrder": 20
 }
 ```
 
@@ -218,6 +236,7 @@ Filter compatible catalog options:
 ```http
 GET /api/professionals?serviceId=1
 GET /api/services?professionalId=1
+GET /api/services?categoryId=3
 Authorization: Bearer <admin-token>
 ```
 
