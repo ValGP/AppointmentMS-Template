@@ -1,1 +1,18 @@
-testsprite_tests\tmp\config.json
+# IDEs and editors
+.idea/
+*.iml
+.vscode/
+
+# Build targets and packaging
+backend/Appointment-Manager-API/target/
+frontend/dist/
+frontend/node_modules/
+
+# Logs and temporary files
+*.log
+**/*.log
+testsprite_tests/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db

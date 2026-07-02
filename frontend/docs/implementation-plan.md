@@ -20,12 +20,12 @@ El frontend se pensara en tres superficies principales:
 - [x] Fase 4.1 - Cierre operativo del admin antes del cliente.
 - [x] Fase 4.2 - Relacion profesional-servicio e interfaces de asignacion.
 - [x] Fase 4.3 - Seguridad operativa y mejoras UX del admin.
-- [x] Fase 4.4 - Pulido operativo avanzado del admin.
+- [x] Fase 4.4 - Pulido operativo advanced del admin.
 - [x] Fase 4.5 - Correcciones UX post-prueba del admin.
 - [x] Fase 5 - Flujo cliente para solicitar turno.
-- [ ] Fase 6 - Area cliente. Iniciada.
-- [ ] Fase 7 - Sitio publico y definicion estetica. Iniciada.
-- [ ] Fase 8 - Pulido y calidad.
+- [x] Fase 6 - Area cliente. Completada.
+- [x] Fase 7 - Sitio publico y definicion estetica. Completada.
+- [x] Fase 8 - Pulido y calidad. Completada.
 
 ## 1. Criterio general
 

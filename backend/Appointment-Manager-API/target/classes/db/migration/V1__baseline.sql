@@ -1,2 +1,0 @@
--- Baseline migration for the project bootstrap.
--- Domain tables will be added in the next implementation phase.

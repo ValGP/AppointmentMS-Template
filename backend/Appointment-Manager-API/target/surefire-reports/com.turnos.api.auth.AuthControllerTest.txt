@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.turnos.api.auth.AuthControllerTest
--------------------------------------------------------------------------------
-Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.481 s -- in com.turnos.api.auth.AuthControllerTest
