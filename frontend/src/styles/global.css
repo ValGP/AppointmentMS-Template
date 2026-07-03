@@ -188,6 +188,10 @@ p {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
   color: inherit;
+  padding: 0;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .public-menu-backdrop {
@@ -2423,6 +2427,10 @@ p {
   border-radius: 8px;
   background: var(--admin-panel-2);
   color: var(--admin-text-main);
+  padding: 0;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .admin-brand-mark {
@@ -3289,6 +3297,28 @@ p {
   margin: 0;
   color: var(--admin-text-muted);
   line-height: 1.5;
+}
+
+.booking-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.booking-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.booking-options input[type="checkbox"] {
+  margin-top: 4px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--admin-brand);
 }
 
 .segmented-control {
@@ -4207,6 +4237,8 @@ p {
     min-height: auto;
     gap: 0;
     padding: 16px 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--admin-border);
   }
 
   .admin-workspace {
@@ -4460,7 +4492,7 @@ p {
   }
 
   .brand {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
   }
 
   .nav-links a:not(.public-nav-cta),
