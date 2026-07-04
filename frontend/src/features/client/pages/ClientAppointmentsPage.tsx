@@ -1,9 +1,10 @@
 import {
   CalendarClock,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   History,
-  ListFilter,
   X,
   XCircle,
 } from "lucide-react";
@@ -28,8 +29,6 @@ const statusLabels: Record<AppointmentStatus, string> = {
   COMPLETED: "Completado",
   NO_SHOW: "No asistio",
 };
-
-type AppointmentFilter = "all" | "pending" | "confirmed" | "history";
 
 function getStatusTone(status: AppointmentStatus) {
   if (status === "PENDING") return "is-pending";
@@ -74,11 +73,12 @@ function canClientCancel(appointment: Appointment) {
 
 export function ClientAppointmentsPage() {
   const queryClient = useQueryClient();
-  const [activeFilter, setActiveFilter] = useState<AppointmentFilter>("all");
+  const [showHistory, setShowHistory] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+  const [cancelOption, setCancelOption] = useState("No puedo asistir (cambio de planes)");
+  const [otherReasonText, setOtherReasonText] = useState("");
   const appointmentsQuery = useQuery({
     queryKey: ["appointments", "client"],
     queryFn: () =>
@@ -112,31 +112,17 @@ export function ClientAppointmentsPage() {
         new Date(right.startDateTime).getTime() -
         new Date(left.startDateTime).getTime(),
     );
-  const filters: Array<{
-    count: number;
-    label: string;
-    value: AppointmentFilter;
-  }> = [
-    { value: "all", label: "Todos", count: appointments.length },
-    { value: "pending", label: "Pendientes", count: pendingAppointments.length },
-    {
-      value: "confirmed",
-      label: "Confirmados",
-      count: confirmedAppointments.length,
-    },
-    { value: "history", label: "Historial", count: historyAppointments.length },
-  ];
-  const shouldShowPending = activeFilter === "all" || activeFilter === "pending";
-  const shouldShowConfirmed =
-    activeFilter === "all" || activeFilter === "confirmed";
-  const shouldShowHistory = activeFilter === "all" || activeFilter === "history";
+
+  const upcomingAppointments = [...confirmedAppointments, ...pendingAppointments];
+
 
   const cancelMutation = useMutation({
     mutationFn: ({ id, reason }: { id: number; reason: string }) =>
       cancelAppointmentByClient(id, { reason }),
     onSuccess: async (appointment) => {
       setCancelTarget(null);
-      setCancelReason("");
+      setCancelOption("No puedo asistir (cambio de planes)");
+      setOtherReasonText("");
       setCancelError(null);
       setCancelSuccess(`${appointment.serviceName} fue cancelado correctamente.`);
       await queryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -152,7 +138,8 @@ export function ClientAppointmentsPage() {
 
   function openCancelModal(appointment: Appointment) {
     setCancelTarget(appointment);
-    setCancelReason("");
+    setCancelOption("No puedo asistir (cambio de planes)");
+    setOtherReasonText("");
     setCancelError(null);
     setCancelSuccess(null);
   }
@@ -163,7 +150,8 @@ export function ClientAppointmentsPage() {
     }
 
     setCancelTarget(null);
-    setCancelReason("");
+    setCancelOption("No puedo asistir (cambio de planes)");
+    setOtherReasonText("");
     setCancelError(null);
   }
 
@@ -172,10 +160,13 @@ export function ClientAppointmentsPage() {
       return;
     }
 
-    const reason = cancelReason.trim();
-    if (!reason) {
-      setCancelError("Contanos brevemente el motivo de la cancelacion.");
-      return;
+    let reason = cancelOption;
+    if (cancelOption === "Otro") {
+      reason = otherReasonText.trim();
+      if (!reason) {
+        setCancelError("Por favor detalla el motivo de la cancelacion.");
+        return;
+      }
     }
 
     cancelMutation.mutate({ id: cancelTarget.id, reason });
@@ -232,73 +223,53 @@ export function ClientAppointmentsPage() {
       ) : null}
 
       {appointments.length > 0 ? (
-        <>
-          <div className="client-appointments-summary">
-            <SummaryCard
-              label="Pendientes"
-              value={pendingAppointments.length}
-              description="Esperan confirmacion de BIBE."
+        <div className="client-dashboard-content">
+          {upcomingAppointments.length > 0 ? (
+            <AppointmentSection
+              appointments={upcomingAppointments}
+              emptyText="No tenes turnos proximos."
+              icon={<CheckCircle2 aria-hidden="true" size={20} />}
+              onCancel={openCancelModal}
+              title="Tus proximos turnos"
             />
-            <SummaryCard
-              label="Confirmados"
-              value={confirmedAppointments.length}
-              description="Proximos turnos confirmados."
-            />
-            <SummaryCard
-              label="Historial"
-              value={historyAppointments.length}
-              description="Turnos pasados o cerrados."
-            />
-          </div>
+          ) : (
+            <div className="client-no-upcoming">
+              <p className="client-muted-text">No tenes turnos proximos programados.</p>
+              <Link className="client-inline-link" to="/app/book">
+                Pedir un turno
+              </Link>
+            </div>
+          )}
 
-          <div className="client-filter-bar" aria-label="Filtros de turnos">
-            <span>
-              <ListFilter aria-hidden="true" size={16} />
-              Filtrar
-            </span>
-            {filters.map((filter) => (
+          {historyAppointments.length > 0 ? (
+            <div className="client-history-toggle-section">
               <button
-                className={activeFilter === filter.value ? "is-active" : ""}
-                key={filter.value}
+                className="client-history-toggle-button"
                 type="button"
-                onClick={() => setActiveFilter(filter.value)}
+                onClick={() => setShowHistory((prev) => !prev)}
               >
-                {filter.label}
-                <strong>{filter.count}</strong>
+                <span>{showHistory ? "Ocultar historial de turnos" : "Ver historial de turnos"}</span>
+                {showHistory ? (
+                  <ChevronUp aria-hidden="true" size={16} />
+                ) : (
+                  <ChevronDown aria-hidden="true" size={16} />
+                )}
               </button>
-            ))}
-          </div>
 
-          <div className="client-appointments-grid">
-            {shouldShowPending ? (
-              <AppointmentSection
-                appointments={pendingAppointments}
-                emptyText="No tenes turnos pendientes de confirmacion."
-                icon={<Clock aria-hidden="true" size={20} />}
-                onCancel={openCancelModal}
-                title="Pendientes"
-              />
-            ) : null}
-            {shouldShowConfirmed ? (
-              <AppointmentSection
-                appointments={confirmedAppointments}
-                emptyText="No tenes turnos confirmados proximos."
-                icon={<CheckCircle2 aria-hidden="true" size={20} />}
-                onCancel={openCancelModal}
-                title="Confirmados"
-              />
-            ) : null}
-            {shouldShowHistory ? (
-              <AppointmentSection
-                appointments={historyAppointments}
-                emptyText="Todavia no hay historial para mostrar."
-                icon={<History aria-hidden="true" size={20} />}
-                onCancel={openCancelModal}
-                title="Historial"
-              />
-            ) : null}
-          </div>
-        </>
+              {showHistory ? (
+                <div className="client-history-expanded">
+                  <AppointmentSection
+                    appointments={historyAppointments}
+                    emptyText="No hay turnos anteriores en tu historial."
+                    icon={<History aria-hidden="true" size={18} />}
+                    onCancel={openCancelModal}
+                    title="Historial de turnos"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {cancelTarget ? (
@@ -353,20 +324,47 @@ export function ClientAppointmentsPage() {
               </div>
             </dl>
 
-            <label className="client-notes-field">
-              <span>Motivo de cancelacion</span>
-              <textarea
-                maxLength={500}
-                rows={4}
-                value={cancelReason}
-                onChange={(event) => {
-                  setCancelReason(event.target.value);
-                  setCancelError(null);
-                }}
-                placeholder="Ejemplo: No voy a poder asistir en ese horario."
-              />
-              <small>{cancelReason.length}/500 caracteres</small>
-            </label>
+             <label className="client-notes-field">
+               <span>Motivo de cancelacion</span>
+               <select
+                 value={cancelOption}
+                 onChange={(event) => {
+                   setCancelOption(event.target.value);
+                   setCancelError(null);
+                 }}
+               >
+                 <option value="No puedo asistir (cambio de planes)">
+                   No puedo asistir (cambio de planes)
+                 </option>
+                 <option value="Inconveniente de ultimo momento">
+                   Inconveniente de ultimo momento
+                 </option>
+                 <option value="Quiero reprogramar para otra fecha">
+                   Quiero reprogramar para otra fecha
+                 </option>
+                 <option value="Error al seleccionar el horario/servicio">
+                   Error al seleccionar el horario/servicio
+                 </option>
+                 <option value="Otro">Otro motivo...</option>
+               </select>
+             </label>
+
+             {cancelOption === "Otro" ? (
+               <label className="client-notes-field" style={{ marginTop: "12px" }}>
+                 <span>Especificar motivo</span>
+                 <textarea
+                   maxLength={300}
+                   rows={3}
+                   value={otherReasonText}
+                   onChange={(event) => {
+                     setOtherReasonText(event.target.value);
+                     setCancelError(null);
+                   }}
+                   placeholder="Por favor contanos brevemente el motivo..."
+                 />
+                 <small>{otherReasonText.length}/300 caracteres</small>
+               </label>
+             ) : null}
 
             {cancelError ? <p className="client-form-error">{cancelError}</p> : null}
 

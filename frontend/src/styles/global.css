@@ -1503,6 +1503,10 @@ p {
   background: var(--bg);
 }
 
+.client-menu-button {
+  display: none !important;
+}
+
 .client-shell {
   min-height: 100vh;
   background:
@@ -2397,9 +2401,10 @@ p {
 .admin-sidebar {
   position: sticky;
   top: 0;
+  height: 100vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
   border-right: 1px solid var(--admin-border);
   background: var(--admin-panel);
   color: var(--admin-text-main);
@@ -3306,19 +3311,45 @@ p {
   margin-top: 6px;
 }
 
+.admin-form-grid .booking-options label,
 .booking-options label {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
   cursor: pointer;
 }
 
+.admin-form-grid .booking-options label span,
+.booking-options label span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.admin-form-grid .booking-options label span strong,
+.booking-options label span strong {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.admin-form-grid .booking-options label span small,
+.booking-options label span small {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.admin-form-grid .booking-options input[type="checkbox"],
 .booking-options input[type="checkbox"] {
-  margin-top: 4px;
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  accent-color: var(--admin-brand);
+  margin-top: 3px !important;
+  flex-shrink: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-height: auto !important;
+  accent-color: var(--admin-brand) !important;
 }
 
 .segmented-control {
@@ -3353,22 +3384,42 @@ p {
   gap: 8px;
 }
 
+.admin-form-grid .assignment-checklist label,
 .assignment-checklist label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 42px !important;
   border: 1px solid var(--admin-border);
   border-radius: 8px;
   background: var(--admin-panel);
   color: var(--admin-text-main);
   padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.admin-form-grid .assignment-checklist label:hover,
+.assignment-checklist label:hover {
+  border-color: var(--admin-text-muted);
+  background: var(--admin-panel-3);
+}
+
+.admin-form-grid .assignment-checklist label.is-selected,
+.assignment-checklist label.is-selected {
+  border-color: var(--admin-brand) !important;
+  background: color-mix(in srgb, var(--admin-brand) 10%, var(--admin-panel)) !important;
+  box-shadow: 0 0 0 1px var(--admin-brand);
+}
+
+.admin-form-grid .assignment-checklist input,
 .assignment-checklist input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--admin-brand);
+  width: 18px !important;
+  height: 18px !important;
+  min-height: auto !important;
+  flex-shrink: 0 !important;
+  accent-color: var(--admin-brand) !important;
+  cursor: pointer;
 }
 
 .catalog-table {
@@ -3924,6 +3975,11 @@ p {
   grid-template-columns: minmax(170px, 1.1fr) 130px minmax(130px, 0.9fr) minmax(130px, 0.9fr) 100px 104px;
 }
 
+.services-table .catalog-table-head,
+.services-table .catalog-row {
+  grid-template-columns: minmax(220px, 1.6fr) minmax(130px, 1fr) 100px 100px 104px 50px;
+}
+
 .catalog-table-head {
   color: var(--admin-text-muted);
   font-size: 0.78rem;
@@ -3934,6 +3990,7 @@ p {
 }
 
 .catalog-row {
+  position: relative;
   min-height: 68px;
   border: 1px solid var(--admin-border);
   border-radius: 8px;
@@ -4217,6 +4274,11 @@ p {
     grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.6fr) minmax(110px, 0.6fr) 100px;
   }
 
+  .services-table .catalog-table-head,
+  .services-table .catalog-row {
+    grid-template-columns: minmax(180px, 1fr) 90px 90px 90px 42px;
+  }
+
   .catalog-table-head span:nth-child(2),
   .catalog-row > span:nth-child(2) {
     display: none;
@@ -4382,6 +4444,13 @@ p {
     grid-template-columns: 1fr auto;
     align-items: start;
     gap: 12px;
+    padding-right: 48px !important;
+  }
+
+  .catalog-row .admin-actions-menu {
+    position: absolute;
+    top: 14px;
+    right: 14px;
   }
 
   .catalog-row > span {
@@ -4421,11 +4490,62 @@ p {
   }
 
   .client-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 2px;
+    display: none !important;
+  }
+
+  .client-nav.is-open {
+    display: flex !important;
+    flex-direction: column !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: var(--surface) !important;
+    border-bottom: 1px solid var(--line) !important;
+    padding: 16px 24px !important;
+    box-shadow: 0 16px 32px rgba(111, 47, 72, 0.1) !important;
+    gap: 12px !important;
+    z-index: 48 !important;
+    animation: clientSlideDown 0.2s ease-out !important;
+  }
+
+  .client-nav a {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+  }
+
+  .client-menu-button {
+    display: grid !important;
+    width: 42px !important;
+    height: 42px !important;
+    place-items: center !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 50% !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .client-menu-button:hover {
+    background: var(--surface-soft) !important;
+    color: var(--primary) !important;
+  }
+
+  .client-menu-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.15) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 45 !important;
+    border: 0 !important;
+    padding: 0 !important;
   }
 
   .client-user {
@@ -4588,17 +4708,7 @@ p {
     display: none;
   }
 
-  .client-nav {
-    display: grid;
-    grid-template-columns: 1fr;
-    width: 100%;
-    overflow: visible;
-  }
 
-  .client-nav a {
-    justify-content: center;
-    width: 100%;
-  }
 
   .client-main {
     width: min(100% - 32px, 1180px);
@@ -5205,6 +5315,791 @@ p {
   .admin-nav-action-btn.logout-btn:hover {
     background: color-mix(in srgb, var(--admin-danger) 10%, transparent);
   }
+}
+
+/* ==========================================================================
+   Modales y Formularios del Portal de Cliente
+   ========================================================================== */
+.client-modal-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(6px) !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+}
+
+.client-confirm-modal {
+  width: min(500px, 100%) !important;
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 30px 24px 24px !important;
+  box-shadow: 0 20px 48px rgba(111, 47, 72, 0.15) !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.client-modal-close {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--muted) !important;
+  cursor: pointer !important;
+  padding: 4px !important;
+  border-radius: 50% !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-modal-close:hover {
+  background: var(--surface-soft) !important;
+  color: var(--primary-strong) !important;
+}
+
+.client-confirm-modal > span {
+  font-size: 0.76rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--primary) !important;
+  letter-spacing: 0.05em !important;
+}
+
+.client-confirm-modal h2 {
+  margin: 0 !important;
+  font-size: 1.5rem !important;
+  color: var(--primary-strong) !important;
+  line-height: 1.2 !important;
+}
+
+.client-confirmation-hint {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #fdf2f8 !important;
+  border: 1px solid #fbcfe8 !important;
+  border-radius: 8px !important;
+  color: #be185d !important;
+  font-size: 0.85rem !important;
+  font-weight: 750 !important;
+  padding: 10px 12px !important;
+  margin: 0 !important;
+}
+
+.client-confirm-modal dl {
+  display: grid !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  background: #fffdfc !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  padding: 16px !important;
+}
+
+.client-confirm-modal dl div {
+  display: grid !important;
+  grid-template-columns: 110px 1fr !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  border-bottom: 1px dashed var(--line) !important;
+  padding-bottom: 10px !important;
+}
+
+.client-confirm-modal dl div:last-child {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.client-confirm-modal dt {
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+}
+
+.client-confirm-modal dd {
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 850 !important;
+  color: var(--text) !important;
+}
+
+.client-notes-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.client-notes-field span {
+  font-size: 0.85rem !important;
+  font-weight: 850 !important;
+  color: var(--text) !important;
+}
+
+.client-notes-field textarea,
+.client-notes-field select {
+  width: 100% !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: var(--text) !important;
+  padding: 10px 12px !important;
+  font: inherit !important;
+  outline: 0 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.client-notes-field textarea:focus,
+.client-notes-field select:focus {
+  border-color: var(--primary) !important;
+}
+
+.client-notes-field small {
+  font-size: 0.72rem !important;
+  color: var(--muted) !important;
+  text-align: right !important;
+}
+
+.client-modal-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1.5fr !important;
+  gap: 12px !important;
+  margin-top: 8px !important;
+}
+
+.client-secondary-action {
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-secondary-action:hover {
+  background: var(--surface-soft) !important;
+  color: var(--text) !important;
+}
+
+.client-danger-action {
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #ef4444 !important;
+  color: white !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-danger-action:hover {
+  background: #dc2626 !important;
+}
+
+/* ==========================================================================
+   Pantallas de Exito de Reserva
+   ========================================================================== */
+.client-result-page {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: calc(100vh - 120px) !important;
+  padding: 24px !important;
+}
+
+.client-result-card {
+  width: min(520px, 100%) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 36px 30px !important;
+  box-shadow: 0 16px 42px rgba(111, 47, 72, 0.06) !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.client-result-icon {
+  width: 64px !important;
+  height: 64px !important;
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 4px !important;
+}
+
+.client-result-icon.tone-muted {
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+}
+
+.client-result-card h1 {
+  margin: 0 !important;
+  font-size: 1.6rem !important;
+  color: var(--primary-strong) !important;
+  line-height: 1.25 !important;
+}
+
+.client-result-card p {
+  margin: 0 !important;
+  color: var(--muted) !important;
+  line-height: 1.5 !important;
+  font-size: 0.92rem !important;
+}
+
+.client-result-summary {
+  width: 100% !important;
+  background: #fffdfc !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  text-align: left !important;
+  margin-top: 8px !important;
+}
+
+.client-result-summary > div {
+  display: grid !important;
+  grid-template-columns: 24px 100px 1fr !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-bottom: 1px dashed var(--line) !important;
+  padding-bottom: 10px !important;
+}
+
+.client-result-summary > div:last-child {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.client-result-summary svg {
+  color: var(--primary) !important;
+}
+
+.client-result-summary span {
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+}
+
+.client-result-summary strong {
+  font-size: 0.95rem !important;
+  color: var(--text) !important;
+  font-weight: 850 !important;
+}
+
+.client-result-note {
+  width: 100% !important;
+  background: #fdf2f8 !important;
+  border: 1px solid #fbcfe8 !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  text-align: left !important;
+}
+
+.client-result-note span {
+  display: block !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: #be185d !important;
+  margin-bottom: 2px !important;
+}
+
+.client-result-note strong {
+  display: block !important;
+  font-size: 1.05rem !important;
+  color: var(--primary-strong) !important;
+}
+
+.client-result-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-top: 10px !important;
+}
+
+.client-secondary-link {
+  min-height: 46px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--primary-strong) !important;
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+  transition: background 0.2s ease !important;
+}
+
+.client-secondary-link:hover {
+  background: var(--surface-soft) !important;
+}
+
+/* ==========================================================================
+   Historial y Summary de Cliente
+   ========================================================================== */
+.client-appointments-summary {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin-bottom: 24px !important;
+}
+
+.client-summary-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  box-shadow: 0 8px 24px rgba(111, 47, 72, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.client-summary-card span {
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--primary) !important;
+}
+
+.client-summary-card strong {
+  font-size: 1.8rem !important;
+  color: var(--text) !important;
+  font-weight: 900 !important;
+}
+
+.client-summary-card p {
+  margin: 0 !important;
+  font-size: 0.8rem !important;
+  color: var(--muted) !important;
+  line-height: 1.35 !important;
+}
+
+.client-filter-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 20px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.client-filter-bar > span {
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+  color: var(--primary) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-right: 12px !important;
+  text-transform: uppercase !important;
+}
+
+.client-filter-bar button {
+  min-height: 34px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+  font-weight: 800 !important;
+  font-size: 0.82rem !important;
+  padding: 0 14px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-filter-bar button.is-active,
+.client-filter-bar button:hover {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.client-filter-count {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+  font-weight: 850 !important;
+  padding: 0 5px !important;
+  margin-left: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-filter-bar button.is-active .client-filter-count,
+.client-filter-bar button:hover .client-filter-count {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+/* Boton de Cancelar Turno/Solicitud en Card */
+.client-cancel-appointment-button {
+  width: 100% !important;
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid #fca5a5 !important;
+  border-radius: 8px !important;
+  background: #fff5f5 !important;
+  color: #e11d48 !important;
+  font-weight: 800 !important;
+  font-size: 0.82rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  margin-top: 12px !important;
+}
+
+.client-cancel-appointment-button:hover {
+  background: #ffe4e6 !important;
+  color: #be123c !important;
+  border-color: #f43f5e !important;
+}
+
+/* Seccion de Historial Acordeon */
+.client-history-toggle-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  margin-top: 24px !important;
+  padding-top: 18px !important;
+  border-top: 1px solid var(--line) !important;
+  align-items: center !important;
+}
+
+.client-history-toggle-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 36px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+  font-weight: 800 !important;
+  font-size: 0.82rem !important;
+  padding: 0 16px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-history-toggle-button:hover {
+  background: var(--surface-soft) !important;
+  color: var(--text) !important;
+  border-color: var(--primary) !important;
+}
+
+.client-history-expanded {
+  width: 100% !important;
+  animation: clientSlideDown 0.25s ease-out !important;
+}
+
+.client-no-upcoming {
+  text-align: center !important;
+  background: var(--surface) !important;
+  border: 1px dashed var(--line) !important;
+  border-radius: 12px !important;
+  padding: 30px 20px !important;
+}
+
+@keyframes clientSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Perfil de Usuario (Cliente)
+   ========================================================================== */
+.client-profile-page {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 28px !important;
+}
+
+.client-profile-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1.2fr !important;
+  gap: 24px !important;
+  align-items: start !important;
+}
+
+@media (max-width: 900px) {
+  .client-profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.client-profile-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  box-shadow: 0 10px 30px rgba(111, 47, 72, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.client-profile-identity {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 16px !important;
+  background: linear-gradient(135deg, #fff7fa, #fffdfc) !important;
+  border-color: rgba(219, 39, 119, 0.16) !important;
+}
+
+.client-profile-avatar {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #f43f5e, #db2777) !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 8px 24px rgba(219, 39, 119, 0.25) !important;
+  flex-shrink: 0 !important;
+}
+
+.client-profile-identity span {
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--primary) !important;
+  letter-spacing: 0.05em !important;
+}
+
+.client-profile-identity h2 {
+  margin: 2px 0 4px 0 !important;
+  font-size: 1.35rem !important;
+  color: var(--primary-strong) !important;
+}
+
+.client-profile-identity p {
+  margin: 0 !important;
+  font-size: 0.88rem !important;
+  color: var(--muted) !important;
+}
+
+.client-profile-list {
+  display: grid !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+
+.client-profile-list div {
+  display: grid !important;
+  grid-template-columns: 130px 1fr !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-bottom: 1px dashed var(--line) !important;
+  padding-bottom: 8px !important;
+}
+
+.client-profile-list div:last-child {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.client-profile-list dt {
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+}
+
+.client-profile-list dd {
+  margin: 0 !important;
+  font-size: 0.92rem !important;
+  font-weight: 800 !important;
+  color: var(--text) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.client-profile-list dd svg {
+  color: var(--primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.client-account-status {
+  display: flex !important;
+  align-items: start !important;
+  gap: 12px !important;
+  background: #f0fdf4 !important;
+  border: 1px solid rgba(34, 197, 94, 0.24) !important;
+  border-radius: 10px !important;
+  padding: 14px !important;
+  color: #14532d !important;
+}
+
+.client-account-status svg {
+  color: #16a34a !important;
+  flex-shrink: 0 !important;
+}
+
+.client-account-status span {
+  display: block !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: #166534 !important;
+  margin-bottom: 2px !important;
+}
+
+.client-account-status strong {
+  display: block !important;
+  font-size: 1.05rem !important;
+  color: #14532d !important;
+}
+
+.client-account-status p {
+  margin: 4px 0 0 0 !important;
+  font-size: 0.82rem !important;
+  line-height: 1.4 !important;
+  color: #166534 !important;
+}
+
+.client-profile-next span {
+  font-size: 0.76rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  color: var(--primary) !important;
+}
+
+.client-profile-next h2 {
+  margin: 4px 0 8px 0 !important;
+  font-size: 1.45rem !important;
+  color: var(--primary-strong) !important;
+}
+
+.client-profile-next p {
+  margin: 0 0 16px 0 !important;
+  font-size: 0.88rem !important;
+  color: var(--muted) !important;
+  line-height: 1.45 !important;
+}
+
+.client-profile-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.client-profile-form label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 850 !important;
+  color: var(--text) !important;
+  position: relative !important;
+}
+
+.client-editable-field {
+  display: flex !important;
+  position: relative !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.client-editable-field input {
+  width: 100% !important;
+  min-height: 42px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: var(--text) !important;
+  padding: 10px 42px 10px 12px !important;
+  font: inherit !important;
+  outline: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-editable-field input[readonly] {
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+  cursor: not-allowed !important;
+  border-color: var(--line) !important;
+}
+
+.client-editable-field input:focus:not([readonly]) {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 1px var(--primary) !important;
+}
+
+.client-editable-field button {
+  position: absolute !important;
+  right: 6px !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--muted) !important;
+  cursor: pointer !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.client-editable-field button:hover {
+  background: var(--surface-soft) !important;
+  color: var(--primary-strong) !important;
+}
+
+.client-profile-actions {
+  display: grid !important;
+  grid-template-columns: 1.5fr 1fr !important;
+  gap: 12px !important;
+  margin-top: 10px !important;
 }
 
 

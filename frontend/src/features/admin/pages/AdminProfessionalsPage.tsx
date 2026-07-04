@@ -621,7 +621,7 @@ function Checklist({
       {items.map((item) => {
         const checked = selectedIds.includes(item.id);
         return (
-          <label key={item.id}>
+          <label key={item.id} className={checked ? "is-selected" : ""}>
             <input
               type="checkbox"
               checked={checked}

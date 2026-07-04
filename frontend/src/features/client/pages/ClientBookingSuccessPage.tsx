@@ -80,7 +80,6 @@ export function ClientBookingSuccessPage() {
         <div className="client-result-note">
           <span>Estado actual</span>
           <strong>Pendiente de confirmacion</strong>
-          <p>Solicitud #{appointment.id}</p>
         </div>
 
         <div className="client-result-actions">

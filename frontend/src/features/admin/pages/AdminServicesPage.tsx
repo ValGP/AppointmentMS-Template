@@ -50,6 +50,18 @@ type CategoryFormValues = {
   slug: string;
 };
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-");
+}
+
 const emptyValues: ServiceFormValues = {
   name: "",
   categoryId: 0,
@@ -179,6 +191,13 @@ export function AdminServicesPage() {
   const categoryForm = useForm<CategoryFormValues>({
     defaultValues: emptyCategoryValues,
   });
+  const categoryName = categoryForm.watch("name");
+
+  useEffect(() => {
+    if (categoryName !== undefined) {
+      categoryForm.setValue("slug", slugify(categoryName));
+    }
+  }, [categoryForm, categoryName]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: ServicePayload) => {
@@ -323,11 +342,19 @@ export function AdminServicesPage() {
     );
   }, [assignmentQuery.data]);
 
+  const onlineBookable = form.watch("onlineBookable");
+
   useEffect(() => {
-    if (requiresEvaluation) {
+    if (requiresEvaluation && onlineBookable) {
       form.setValue("onlineBookable", false);
     }
-  }, [form, requiresEvaluation]);
+  }, [form, requiresEvaluation, onlineBookable]);
+
+  useEffect(() => {
+    if (onlineBookable && requiresEvaluation) {
+      form.setValue("requiresEvaluation", false);
+    }
+  }, [form, onlineBookable, requiresEvaluation]);
 
   function onSubmit(values: ServiceFormValues) {
     setFormError(null);
@@ -455,7 +482,6 @@ export function AdminServicesPage() {
               >
                 <div>
                   <strong>{category.name}</strong>
-                  <span>{category.slug}</span>
                 </div>
                 <AdminActionsMenu
                   label={`Acciones de categoria ${category.name}`}
@@ -503,19 +529,7 @@ export function AdminServicesPage() {
               <FieldError message={categoryForm.formState.errors.name?.message} />
             </label>
 
-            <label>
-              Slug
-              <input
-                {...categoryForm.register("slug", {
-                  required: "Ingresa el slug.",
-                  maxLength: {
-                    value: 140,
-                    message: "Maximo 140 caracteres.",
-                  },
-                })}
-              />
-              <FieldError message={categoryForm.formState.errors.slug?.message} />
-            </label>
+            <input type="hidden" {...categoryForm.register("slug")} />
 
             <label>
               Orden
@@ -666,7 +680,6 @@ export function AdminServicesPage() {
                 <label>
                   <input
                     type="checkbox"
-                    disabled={requiresEvaluation}
                     {...form.register("onlineBookable")}
                   />
                   <span>
@@ -833,7 +846,7 @@ export function AdminServicesPage() {
         ) : null}
 
         {visibleServices.length > 0 ? (
-          <div className="catalog-table" role="table" aria-label="Servicios">
+          <div className="catalog-table services-table" role="table" aria-label="Servicios">
             <div className="catalog-table-head" role="row">
               <span>Servicio</span>
               <span>Categoria</span>
@@ -1022,7 +1035,7 @@ function Checklist({
       {items.map((item) => {
         const checked = selectedIds.includes(item.id);
         return (
-          <label key={item.id}>
+          <label key={item.id} className={checked ? "is-selected" : ""}>
             <input
               type="checkbox"
               checked={checked}

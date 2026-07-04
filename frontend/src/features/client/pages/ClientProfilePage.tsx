@@ -3,7 +3,6 @@ import {
   Mail,
   Pencil,
   Phone,
-  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -158,40 +157,12 @@ export function ClientProfilePage() {
           </dl>
         </article>
 
-        <article className="client-profile-card">
-          <div className="client-section-title">
-            <ShieldCheck aria-hidden="true" size={20} />
-            <h2>Cuenta</h2>
-          </div>
-          <div className="client-account-status">
-            <CheckCircle2 aria-hidden="true" size={20} />
-            <div>
-              <span>Estado</span>
-              <strong>{accountStatus}</strong>
-              <p>
-                Tu cuenta permite solicitar turnos y consultar el estado de tus
-                reservas.
-              </p>
-            </div>
-          </div>
-          <dl className="client-profile-list">
-            <div>
-              <dt>Rol</dt>
-              <dd>Cliente</dd>
-            </div>
-            <div>
-              <dt>ID de cuenta</dt>
-              <dd>{user?.id ?? "No disponible"}</dd>
-            </div>
-          </dl>
-        </article>
-
         <article className="client-profile-card client-profile-next">
-          <span>Editar perfil</span>
-          <h2>Datos editables</h2>
+          <span>Mis datos</span>
+          <h2>Modificar mis datos</h2>
           <p>
-            Podes actualizar tu nombre y telefono. El email queda bloqueado como
-            dato de cuenta por seguridad.
+            Podes actualizar tu nombre y telefono de contacto. Por seguridad, el
+            email no se puede cambiar.
           </p>
 
           <form className="client-profile-form" onSubmit={handleSubmit}>
