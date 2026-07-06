@@ -8,4 +8,6 @@ import java.util.List;
 public interface BusinessHoursRepository extends JpaRepository<BusinessHours, Long> {
 
     List<BusinessHours> findByProfessionalIdAndDayOfWeekAndActiveTrue(Long professionalId, DayOfWeek dayOfWeek);
+
+    boolean existsByProfessionalIdAndActiveTrue(Long professionalId);
 }

@@ -5,6 +5,7 @@ import com.turnos.api.common.ResourceNotFoundException;
 import com.turnos.api.services.Service;
 import com.turnos.api.services.ServiceRepository;
 import org.springframework.transaction.annotation.Transactional;
+import com.turnos.api.availability.BusinessHoursRepository;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -18,15 +19,18 @@ public class ProfessionalServiceAssignmentService {
     private final ProfessionalRepository professionalRepository;
     private final ServiceRepository serviceRepository;
     private final ProfessionalServiceRepository professionalServiceRepository;
+    private final BusinessHoursRepository businessHoursRepository;
 
     public ProfessionalServiceAssignmentService(
             ProfessionalRepository professionalRepository,
             ServiceRepository serviceRepository,
-            ProfessionalServiceRepository professionalServiceRepository
+            ProfessionalServiceRepository professionalServiceRepository,
+            BusinessHoursRepository businessHoursRepository
     ) {
         this.professionalRepository = professionalRepository;
         this.serviceRepository = serviceRepository;
         this.professionalServiceRepository = professionalServiceRepository;
+        this.businessHoursRepository = businessHoursRepository;
     }
 
     @Transactional(readOnly = true)
@@ -224,5 +228,10 @@ public class ProfessionalServiceAssignmentService {
     private Service getService(Long serviceId) {
         return serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service", serviceId));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasBusinessHours(Long professionalId) {
+        return businessHoursRepository.existsByProfessionalIdAndActiveTrue(professionalId);
     }
 }

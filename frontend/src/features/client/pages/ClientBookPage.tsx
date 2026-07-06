@@ -118,6 +118,9 @@ export function ClientBookPage() {
     null,
   );
   const [weekOffset, setWeekOffset] = useState(0);
+  const [firstAvailableWeekOffset, setFirstAvailableWeekOffset] = useState<number | null>(
+    null,
+  );
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [notes, setNotes] = useState("");
@@ -138,7 +141,7 @@ export function ClientBookPage() {
   const professionalsQuery = useQuery({
     queryKey: ["client-professionals", selectedServiceId],
     enabled: selectedServiceId !== null,
-    queryFn: () => getProfessionals({ serviceId: selectedServiceId! }),
+    queryFn: () => getProfessionals({ serviceId: selectedServiceId!, hasAvailability: true }),
   });
 
   const activeServices = useMemo(
@@ -179,6 +182,8 @@ export function ClientBookPage() {
     setSelectedSlot(null);
     setIsConfirmOpen(false);
     setFormError(null);
+    setWeekOffset(0);
+    setFirstAvailableWeekOffset(null);
   }, [selectedCategoryId]);
 
   useEffect(() => {
@@ -186,6 +191,8 @@ export function ClientBookPage() {
     setSelectedSlot(null);
     setIsConfirmOpen(false);
     setFormError(null);
+    setWeekOffset(0);
+    setFirstAvailableWeekOffset(null);
   }, [selectedServiceId]);
 
   useEffect(() => {
@@ -193,6 +200,11 @@ export function ClientBookPage() {
       setSelectedProfessionalId(activeProfessionals[0].id);
     }
   }, [activeProfessionals, selectedProfessionalId]);
+
+  useEffect(() => {
+    setWeekOffset(0);
+    setFirstAvailableWeekOffset(null);
+  }, [selectedProfessionalId]);
 
   useEffect(() => {
     setSelectedSlot(null);
@@ -233,6 +245,33 @@ export function ClientBookPage() {
     (count, slots) => count + slots.length,
     0,
   );
+
+  useEffect(() => {
+    if (
+      selectedProfessionalId !== null &&
+      selectedServiceId !== null &&
+      !isAvailabilityLoading &&
+      !isAvailabilityError
+    ) {
+      if (availableSlotCount > 0) {
+        if (firstAvailableWeekOffset === null || weekOffset < firstAvailableWeekOffset) {
+          setFirstAvailableWeekOffset(weekOffset);
+        }
+      } else if (availableSlotCount === 0 && weekOffset === (firstAvailableWeekOffset ?? weekOffset)) {
+        if (weekOffset < 8) {
+          setWeekOffset((offset) => offset + 1);
+        }
+      }
+    }
+  }, [
+    selectedProfessionalId,
+    selectedServiceId,
+    weekOffset,
+    isAvailabilityLoading,
+    isAvailabilityError,
+    availableSlotCount,
+    firstAvailableWeekOffset,
+  ]);
 
   const createMutation = useMutation({
     mutationFn: (payload: AppointmentPayload) => createAppointment(payload),
@@ -469,9 +508,9 @@ export function ClientBookPage() {
                 <div className="client-week-toolbar">
                   <button
                     type="button"
-                    onClick={() => setWeekOffset(0)}
-                    disabled={weekOffset === 0}
-                    aria-label="Ver semana actual"
+                    onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
+                    disabled={weekOffset <= (firstAvailableWeekOffset ?? 0)}
+                    aria-label="Ver semana anterior"
                   >
                     <ChevronLeft aria-hidden="true" size={18} />
                   </button>
@@ -479,14 +518,18 @@ export function ClientBookPage() {
                     <span>Semana visible</span>
                     <strong>{formatWeekRange(weekStart)}</strong>
                     <small>
-                      {weekOffset === 0 ? "Semana actual" : "Semana proxima"}
+                      {weekOffset === 0
+                        ? "Semana actual"
+                        : weekOffset === 1
+                          ? "Semana proxima"
+                          : `En ${weekOffset} semanas`}
                     </small>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setWeekOffset(1)}
-                    disabled={weekOffset === 1}
-                    aria-label="Ver semana proxima"
+                    onClick={() => setWeekOffset((w) => Math.min(8, w + 1))}
+                    disabled={weekOffset >= 8}
+                    aria-label="Ver semana siguiente"
                   >
                     <ChevronRight aria-hidden="true" size={18} />
                   </button>
@@ -512,8 +555,8 @@ export function ClientBookPage() {
                   <div className="client-empty-state">
                     <strong>No hay horarios disponibles esta semana.</strong>
                     <p>
-                      Proba con la otra semana visible. Si tampoco hay horarios,
-                      consultanos para coordinar una alternativa.
+                      Proba buscando en las siguientes semanas usando la flecha.
+                      Si tampoco hay horarios, consultanos para coordinar una alternativa.
                     </p>
                   </div>
                 ) : null}

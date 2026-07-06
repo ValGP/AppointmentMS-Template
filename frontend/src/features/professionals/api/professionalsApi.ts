@@ -16,6 +16,7 @@ export type ProfessionalPayload = {
 
 export type ProfessionalSearchParams = {
   serviceId?: number;
+  hasAvailability?: boolean;
 };
 
 export type ServiceAssignmentMode = "ALL_SERVICES" | "SELECTED_SERVICES";
@@ -40,6 +41,9 @@ export function getProfessionals(params: ProfessionalSearchParams = {}) {
 
   if (params.serviceId !== undefined) {
     searchParams.set("serviceId", String(params.serviceId));
+  }
+  if (params.hasAvailability !== undefined) {
+    searchParams.set("hasAvailability", String(params.hasAvailability));
   }
 
   const query = searchParams.toString();

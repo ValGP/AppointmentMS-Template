@@ -40,11 +40,20 @@ public class ProfessionalController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
-    public List<ProfessionalResponse> findAll(@RequestParam(required = false) Long serviceId) {
+    public List<ProfessionalResponse> findAll(
+            @RequestParam(required = false) Long serviceId,
+            @RequestParam(required = false, defaultValue = "false") boolean hasAvailability
+    ) {
         if (serviceId != null) {
-            return professionalServiceAssignmentService.findProfessionalsForService(serviceId).stream()
+            List<ProfessionalResponse> professionals = professionalServiceAssignmentService.findProfessionalsForService(serviceId).stream()
                     .map(ProfessionalResponse::from)
                     .toList();
+            if (hasAvailability) {
+                return professionals.stream()
+                        .filter(p -> professionalServiceAssignmentService.hasBusinessHours(p.id()))
+                        .toList();
+            }
+            return professionals;
         }
 
         return professionalService.findAll();
